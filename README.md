@@ -34,9 +34,8 @@ A modern, responsive admin dashboard built with **Next.js**, **JavaScript**, and
 - **Language**: JavaScript (ES6+)
 - **Styling**: Tailwind CSS
 - **Routing**: File-based routing (Next.js)
-- **State Management**: Context API
+- **State Management**: Redux
 - **Forms**: Controlled inputs with validation
-- **Icons**: [Lucide](https://lucide.dev/)
 
 ---
 
