@@ -37,7 +37,7 @@ const Sidebar = ({ visible }) => {
   if (!visible) return null;
   return (
     <aside
-      className={`w-64 bg-gray-100 h-screen p-4 shadow-lg
+      className={`z-4 absolute md:relative w-64 bg-gray-100 h-screen p-4 shadow-lg
     transition-all duration-500 ease-[cubic-bezier(0.68,-0.6,0.32,1.6)] 
     ${
       visible

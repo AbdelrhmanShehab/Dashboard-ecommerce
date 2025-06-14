@@ -6,6 +6,7 @@ const users = [
     email: "john@example.com",
     dateCreated: "15/11/2020",
     active: true,
+    role: "admin",
   },
   {
     id: 2,
@@ -13,6 +14,7 @@ const users = [
     email: "jane@example.com",
     dateCreated: "15/03/2022",
     active: true,
+    role: "admin",
   },
   {
     id: 3,
@@ -20,6 +22,7 @@ const users = [
     email: "mike@example.com",
     dateCreated: "20/05/2023",
     active: false,
+    role: "user",
   },
   {
     id: 4,
@@ -27,6 +30,7 @@ const users = [
     email: "nour@gmail.com",
     dateCreated: "15/11/2020",
     active: false,
+    role: "admin",
   },
   {
     id: 5,
@@ -34,6 +38,7 @@ const users = [
     email: "mohamed@gmail.com",
     dateCreated: "15/03/2025",
     active: true,
+    role: "user",
   },
 ];
 
