@@ -1,25 +1,21 @@
+// components/ClientLayout.jsx
 "use client";
-
 import { useState } from "react";
-import Sidebar from "./Sidebar";
-import Header from "./Header";
+import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
 
-const ClientLayout = ({ children }) => {
-  const [sidebarVisible, setSidebarVisible] = useState(true);
+export default function ClientLayout({ children }) {
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarVisible((prev) => !prev);
-  };
+  const toggleSidebar = () => setSidebarVisible((prev) => !prev);
 
   return (
-    <div className="flex h-screen">
-      <Sidebar visible={sidebarVisible} />
-      <div className="flex flex-col flex-1 overflow-hidden w-full">
+    <div className="flex">
+      <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+      <div className="flex-1 flex flex-col">
         <Header toggleSidebar={toggleSidebar} />
-        <main className="p-6 bg-gray-100 overflow-y-auto">{children}</main>
+        <main className="p-4">{children}</main>
       </div>
     </div>
   );
-};
-
-export default ClientLayout;
+}

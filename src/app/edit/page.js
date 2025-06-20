@@ -1,3 +1,4 @@
+
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation"; // Changed from 'next/router'
@@ -8,61 +9,33 @@ import Link from "next/link";
 export default function Edit() {
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
-  const [status, setStatus] = useState(""); useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-
-    if (!userData.id) {
-      alert("No user selected for editing. Redirecting...");
-      router.push("/users");
-      return;
-    }
-
-    setId(userData.id);
-    setName(userData.Name || "");
-    setRole(userData.Role || "");
-    setStatus(userData.Status || "");
-  }, []);
-
+  const [status, setStatus] = useState("");
   const [id, setId] = useState("");
   const router = useRouter();
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-
-    if (!userData.id) {
-      alert("No user selected for editing. Redirecting...");
-      router.push("/users");
-      return;
-    }
-
-    setId(userData.id);
-    setName(userData.Name || "");
-    setRole(userData.Role || "");
-    setStatus(userData.Status || "");
+    setName(localStorage.getItem("Name") || "");
+    setRole(localStorage.getItem("Role") || "");
+    setStatus(localStorage.getItem("Status") || "");
+    setId(localStorage.getItem("id") || "");
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!name || !role || !status || !id) {
-      alert("All fields are required, including a valid ID.");
+    if (!name || !role || !status) {
+      alert("All fields are required");
       return;
     }
 
-    try {
-      const userDoc = doc(db, "users", id);
-      await updateDoc(userDoc, {
-        Name: name,
-        Role: role,
-        Status: status,
-      });
-      router.push("/users");
-    } catch (error) {
-      console.error("Failed to update user:", error);
-      alert("Error updating user. Check console for details.");
-    }
-  };
+    const userDoc = doc(db, "users", id);
+    await updateDoc(userDoc, {
+      Name: name,
+      Role: role,
+      Status: status,
+    });
 
+    router.push("/users");
+  };
 
   return (
     <div className="p-8 max-w-xl mx-auto">
@@ -82,7 +55,6 @@ export default function Edit() {
           placeholder="Role (admin/editor)"
           className="w-full border border-gray-300 rounded px-4 py-2"
         >
-          <option value="Role">Select Role</option>
           <option value="admin">Admin</option>
           <option value="user">User</option>
         </select>
