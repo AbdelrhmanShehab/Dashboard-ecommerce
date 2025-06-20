@@ -24,10 +24,10 @@ const Sidebar = ({ visible, onClose }) => {
   return (
     <aside
       className={`
-        z-40 fixed md:relative  top-0 left-0
+        z-40 fixed   top-0 left-0
         w-64 bg-gray-100 h-[100vh] p-4 shadow-lg
         transition-transform duration-300 ease-in-out
-        ${visible ? "translate-x-0" : "-translate-x-full"}
+        ${visible ? "translate-x-0 md:relative" : "-translate-x-full "}
       `}
     >
       <nav>
