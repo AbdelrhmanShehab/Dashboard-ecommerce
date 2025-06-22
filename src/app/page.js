@@ -5,12 +5,12 @@ import UserCard from "../components/UserCard";
 import ProductCard from "@/components/ProductCard";
 export default function Home() {
   return (
-    <main className="w-full md:w-[97%] m-auto mb-10">
+    <main className="w-full md:w-[97%] m-auto mb-10 dark:bg-[#1a1b23] h-[81.5vh]">
       <TitlePage
         header="Dashboard"
         paragraph={"Welcome back! Here's what's happening."}
       />
-      <div className="flex flex-col gap-4 md:gap-1 lg:gap-4 md:flex-row  md:justify-between ">
+      <div className="flex flex-col gap-4 md:gap-1 lg:gap-4 md:flex-row  md:justify-between dark:bg-[#1a1b23]">
         <div className="flex flex-col gap-4 md:gap-1 lg:flex-row md:w-[49%] lg:w-full">
           <StatusCard
             title="Total Users"

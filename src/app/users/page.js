@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import format from "date-fns/format";
 import TitlePage from "@/components/TitlePage";
-
+import MainBtn from "@/components/Mainbtn";
 export default function UserPage() {
   const [value, loading, error] = useCollection(collection(db, "users"));
 
@@ -31,31 +31,29 @@ export default function UserPage() {
   };
 
   return (
-    <div className="p-4">
+    <main className="p-4 dark:bg-[#1a1b23] h-[90vh] dark:text-white">
       <div className="flex justify-between items-center mb-4">
         <TitlePage
           header="Users"
           paragraph="Manage your user accounts and roles."
         />
         <Link href="/create">
-          <button className="p-4 bg-[#111827] text-white rounded-lg cursor-pointer">
-            Add User
-          </button>
+          <MainBtn content='Add User' />
         </Link>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow">
+      <div className="overflow-x-auto dark:bg-[#a0a0b0] roundeds">
+        <table className="min-w-full bg-white border dark:border-gray-600 border-gray-200 rounded-lg shadow">
           <thead>
-            <tr className="bg-gray-100 text-gray-600 uppercase text-sm">
-              <th className="py-3 px-4 text-center">User</th>
+            <tr className="bg-gray-100 text-gray-600 uppercase text-sm dark:bg-[#6366f1] dark:text-white">
+              <th className="py-3 px-4 text-center ">User</th>
               <th className="py-3 px-4 text-center">Role</th>
               <th className="py-3 px-4 text-center">Status</th>
               <th className="py-3 px-4 text-center">Created</th>
               <th className="py-3 px-4 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-center">
+          <tbody className="text-center dark:bg-[#0D1321]">
             {loading && (
               <tr>
                 <td colSpan={5} className="p-4">
@@ -70,7 +68,7 @@ export default function UserPage() {
                 ...data,
               };
               return (
-                <tr key={doc.id} className="border-t border-gray-200">
+                <tr key={doc.id} className="border-t border-gray-200 dark:border-gray-600">
                   <td className="py-3 px-4">{data.Name}</td>
                   <td className="py-3 px-4">{data.Role}</td>
                   <td className="py-3 px-4">
@@ -99,6 +97,7 @@ export default function UserPage() {
                           width={20}
                           height={20}
                           alt="Edit"
+                          className="dark:invert dark:brightness-200"
                         />
                       </button>
                     </Link>
@@ -111,6 +110,7 @@ export default function UserPage() {
                         width={20}
                         height={20}
                         alt="Delete"
+                        className="dark:invert dark:brightness-200"
                       />
                     </button>
                   </td>
@@ -127,6 +127,6 @@ export default function UserPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </main>
   );
 }

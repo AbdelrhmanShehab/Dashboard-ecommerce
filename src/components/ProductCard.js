@@ -10,8 +10,8 @@ const ProductCard = () => {
     .slice(0, 3);
 
   return (
-    <div className=" bg-white rounded-xl shadow p-6 mt-10  w-full">
-      <TitlePage header="Recent Users" paragraph="Latest user registrations." />
+    <div className=" bg-white rounded-xl shadow p-6 mt-10  w-full dark:bg-[#0b1120] text-white">
+      <TitlePage header="Recent Products" paragraph="Latest products added." />
       <ul className="space-y-4">
         {topProducts.map((product, index) => (
           <li key={index} className="flex items-center justify-between">

@@ -18,11 +18,11 @@ const titles = [
   },
 ];
 
-const TitlePage = ({header, paragraph }) => {
+const TitlePage = ({ header, paragraph }) => {
   return (
     <div className="mb-4">
-      <h1 className="primary text-2xl font-bold">{header}</h1>
-      <p className="secondry text-base">{paragraph}</p>
+      <h1 className="text-[#111827] text-2xl dark:text-[#f5f6fa]  font-bold">{header}</h1>
+      <p className=" text-[#77758e] text-base dark:text-[#a0a0b0]">{paragraph}</p>
     </div>
   );
 };

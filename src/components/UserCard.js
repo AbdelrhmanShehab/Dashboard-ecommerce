@@ -14,7 +14,7 @@ const UserCard = () => {
     .slice(0, 3);
 
   return (
-    <div className=" bg-white rounded-xl shadow p-6 mt-10  w-full">
+    <div className=" bg-white rounded-xl shadow p-6 mt-10  w-full dark:bg-[#0D1321] text-white">
       <TitlePage header="Recent Users" paragraph="Latest user registrations." />
       <ul className="space-y-4">
         {latestUsers.map((user) => (
@@ -29,11 +29,10 @@ const UserCard = () => {
               </div>
             </div>
             <span
-              className={`px-3 py-1 text-xs font-medium rounded-full ${
-                user.active
-                  ? "bg-green-100 text-green-800"
-                  : "bg-gray-100 text-gray-500"
-              }`}
+              className={`px-3 py-1 text-xs font-medium rounded-full ${user.active
+                ? "bg-green-100 text-green-800"
+                : "bg-gray-100 text-gray-500"
+                }`}
             >
               {user.active ? "active" : "inactive"}
             </span>
