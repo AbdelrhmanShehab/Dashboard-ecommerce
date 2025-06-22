@@ -1,9 +1,9 @@
 // app/layout.js
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
 import ClientLayout from "@/components/ClientLayout";
+import { ThemeProvider } from "@/context/ThemeContext";
+
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({
   subsets: ["latin"],
@@ -14,12 +14,13 @@ export const metadata = {
   title: "Dashboard",
   description: "Manage your business in one place",
 };
-
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className="">
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
-        <ClientLayout>{children}</ClientLayout>
+        <ClientLayout>
+          <ThemeProvider>{children}</ThemeProvider>
+        </ClientLayout>
       </body>
     </html>
   );

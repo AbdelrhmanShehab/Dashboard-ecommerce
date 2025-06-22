@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from "next/image";
@@ -7,7 +6,7 @@ import { db } from "@/firebaseConfig";
 import { collection, deleteDoc, doc } from "firebase/firestore";
 import { useCollection } from "react-firebase-hooks/firestore";
 import format from "date-fns/format";
-import defaultproduct from "../../../public/images/product-default.svg"
+import defaultproduct from "../../../public/images/product-default.svg";
 import MainBtn from "@/components/Mainbtn";
 export default function ProductsPage() {
   const [value, loading, error] = useCollection(collection(db, "products"));
@@ -21,7 +20,7 @@ export default function ProductsPage() {
       <div className="flex justify-between">
         <h2 className="text-2xl font-bold">Products</h2>
         <Link href="/createproduct">
-          <MainBtn content='Add Product' />
+          <MainBtn content="Add Product" />
         </Link>
       </div>
 
@@ -50,7 +49,10 @@ export default function ProductsPage() {
             {value?.docs.map((doc) => {
               const data = doc.data();
               return (
-                <tr key={doc.id} className="border-t border-gray-200 dark:border-gray-600 text-center">
+                <tr
+                  key={doc.id}
+                  className="border-t border-gray-200 dark:border-gray-600 text-center"
+                >
                   <td className="py-3 px-4">
                     <img
                       src={data.Image ? data.Image : defaultproduct}
@@ -63,10 +65,11 @@ export default function ProductsPage() {
                   <td className="py-3 px-4">{data.Stock}</td>
                   <td className="py-3 px-4">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs ${data.Status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                        }`}
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        data.Status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
                     >
                       {data.Status}
                     </span>
