@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { db } from "@/firebaseConfig"; // Adjust the path as needed
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-
+import MainBtn from "@/components/Mainbtn";
 export default function CreateUserPage() {
   const [form, setForm] = useState({
     user: "",
@@ -46,7 +46,7 @@ export default function CreateUserPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 rounded-xl bg-white shadow">
+    <div className="max-w-xl mx-auto mt-10 p-6 rounded-xl bg-white shadow dark:bg-[#111827] dark:text-white">
       <h1 className="text-2xl font-bold mb-6">Create User</h1>
 
       {success && (
@@ -58,7 +58,7 @@ export default function CreateUserPage() {
         <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{error}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4  dark:bg-[#111827]">
         <div>
           <label className="block mb-1 font-medium">User</label>
           <input
@@ -81,9 +81,15 @@ export default function CreateUserPage() {
             required
             className="w-full border px-3 py-2 rounded"
           >
-            <option value="">Select role</option>
-            <option value="Admin">Admin</option>
-            <option value="Editor">User</option>
+            <option className="dark:text-gray-800" value="">
+              Select role
+            </option>
+            <option className="dark:text-gray-800" value="Admin">
+              Admin
+            </option>
+            <option className="dark:text-gray-800" value="Editor">
+              User
+            </option>
           </select>
         </div>
 
@@ -96,18 +102,19 @@ export default function CreateUserPage() {
             required
             className="w-full border px-3 py-2 rounded"
           >
-            <option value="">Select status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option className="dark:text-gray-800" value="">
+              Select status
+            </option>
+            <option className="dark:text-gray-800" value="active">
+              Active
+            </option>
+            <option className="dark:text-gray-800" value="inactive">
+              Inactive
+            </option>
           </select>
         </div>
 
-        <button
-          type="submit"
-          className="bg-[#111827] text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Create User
-        </button>
+        <MainBtn content="Create User" type="submit" />
       </form>
     </div>
   );

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { UserProvider } from "@/context/UserContext";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({
@@ -19,7 +20,9 @@ export default function RootLayout({ children }) {
     <html lang="en" className="bg-[#fafafa] dark:bg-[#1a1b23]">
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
         <ClientLayout>
-          <ThemeProvider>{children}</ThemeProvider>
+          <UserProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </UserProvider>
         </ClientLayout>
       </body>
     </html>

@@ -7,19 +7,21 @@ import Link from "next/link";
 import format from "date-fns/format";
 import TitlePage from "@/components/TitlePage";
 import MainBtn from "@/components/Mainbtn";
+import { useUser } from "@/context/UserContext";
+
 export default function UserPage() {
   const [value, loading, error] = useCollection(collection(db, "users"));
+  const { setSelectedUser } = useUser();
 
   const handleSetUserData = (user) => {
     const { id, Name, Role, Status, Created } = user;
-    const userData = {
+    setSelectedUser({
       id,
       Name,
       Role,
       Status,
       Created: Created?.toDate() || null,
-    };
-    localStorage.setItem("user", JSON.stringify(userData));
+    });
   };
 
   const handleDelete = async (id) => {
@@ -38,7 +40,7 @@ export default function UserPage() {
           paragraph="Manage your user accounts and roles."
         />
         <Link href="/create">
-          <MainBtn content='Add User' />
+          <MainBtn content="Add User" />
         </Link>
       </div>
 
@@ -68,15 +70,19 @@ export default function UserPage() {
                 ...data,
               };
               return (
-                <tr key={doc.id} className="border-t border-gray-200 dark:border-gray-600">
+                <tr
+                  key={doc.id}
+                  className="border-t border-gray-200 dark:border-gray-600"
+                >
                   <td className="py-3 px-4">{data.Name}</td>
                   <td className="py-3 px-4">{data.Role}</td>
                   <td className="py-3 px-4">
                     <span
-                      className={`inline-block px-2 py-1 rounded-lg text-xs ${data.Status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                        }`}
+                      className={`inline-block px-2 py-1 rounded-lg text-xs ${
+                        data.Status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
                     >
                       {data.Status}
                     </span>
