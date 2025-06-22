@@ -16,7 +16,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <main className="p-4 dark:bg-[#1a1b23] h-[90vh] text-white">
+    <main className="p-4 dark:bg-[#1a1b23] h-[90vh] dark:text-white">
       <div className="flex justify-between">
         <h2 className="text-2xl font-bold">Products</h2>
         <Link href="/createproduct">

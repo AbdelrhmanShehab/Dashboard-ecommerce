@@ -31,7 +31,7 @@ export default function UserPage() {
   };
 
   return (
-    <main className="p-4 dark:bg-[#1a1b23] h-[90vh] dark:text-white">
+    <main className="p-4 dark:bg-[#1a1b23] dark:text-white">
       <div className="flex justify-between items-center mb-4">
         <TitlePage
           header="Users"

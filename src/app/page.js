@@ -1,9 +1,12 @@
+"use client";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import TitlePage from "@/components/TitlePage";
 import StatusCard from "@/components/StatusCard";
 import UserCard from "../components/UserCard";
 import ProductCard from "@/components/ProductCard";
 export default function Home() {
+
   return (
     <main className="w-full md:w-[97%] m-auto mb-10 dark:bg-[#1a1b23] h-[81.5vh]">
       <TitlePage

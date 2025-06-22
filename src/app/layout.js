@@ -16,7 +16,7 @@ export const metadata = {
 };
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="">
+    <html lang="en" className="bg-[#fafafa] dark:bg-[#1a1b23]">
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
         <ClientLayout>
           <ThemeProvider>{children}</ThemeProvider>
