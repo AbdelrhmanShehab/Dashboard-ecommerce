@@ -82,10 +82,16 @@ export default function ProductsPage() {
                   <td className="py-3 px-4 space-x-2">
                     <button
                       onClick={() => deleteProduct(doc.id)}
-                      className="text-red-600 hover:underline"
+                      className="px-2 py-1 rounded cursor-pointer"
                     >
-                      Delete
-                    </button>
+                      <Image
+                        src="/icons/delete-icon.svg"
+                        width={20}
+                        height={20}
+                        alt="Delete"
+                        className="dark:invert dark:brightness-200"
+                      />
+                    </button>{" "}
                   </td>
                 </tr>
               );
