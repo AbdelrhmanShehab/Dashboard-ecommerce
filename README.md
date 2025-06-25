@@ -27,7 +27,7 @@ A modern, responsive admin dashboard built with **Next.js**, **JavaScript**, and
 - Persistent sessions (with cookies or localStorage)
 
 ---
-[Live Demo](https://dashboard-ecommerce-47ql.vercel.app/)
+[Live Demo](https://dashboard-ecommerce-lyart.vercel.app/)
 ## ⚙️ Tech Stack
 
 - **Framework**: [Next.js](https://nextjs.org/)
