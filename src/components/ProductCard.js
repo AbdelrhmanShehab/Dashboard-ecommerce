@@ -55,7 +55,7 @@ const ProductCard = () => {
                 className="w-10 h-10 rounded-md object-cover border border-gray-300"
               />
               <div>
-                <p className="font-medium">{product.Name}</p>
+                <p className="font-medium text-zinc-900 dark:text-white">{product.Name}</p>
                 <p className="text-sm text-gray-500">${product.Price}</p>
               </div>
             </div>

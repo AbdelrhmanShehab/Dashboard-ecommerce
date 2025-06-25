@@ -52,13 +52,15 @@ const UserCard = () => {
         {users.map((user) => (
           <li key={user.id} className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-semibold dark:bg-blue-900 dark:text-blue-200">
+              <div className="w-10 h-10 flex items-center justify-center rou  nded-full bg-blue-100 text-blue-800 font-semibold dark:bg-blue-900 dark:text-blue-200">
                 {user.Name?.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="font-medium dark:text-white">{user.Name}</p>
+                <p className="font-medium text-zinc-900 dark:text-white">
+                  {user.Name}
+                </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {user.Email || "No email"}
+                  {user.Role}
                 </p>
               </div>
             </div>

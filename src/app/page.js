@@ -1,5 +1,6 @@
 "use client";
 import { use, useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import TitlePage from "@/components/TitlePage";
 import StatusCard from "@/components/StatusCard";
@@ -44,7 +45,6 @@ export default function Home() {
             secondaryValue={UserValue}
             iconSrc="/icons/user-icon.svg"
           />
-
           <StatusCard
             title="Products"
             value={products?.docs.length}
