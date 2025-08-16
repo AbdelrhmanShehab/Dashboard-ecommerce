@@ -31,6 +31,8 @@ export default function Home() {
   products?.docs.forEach((doc) => {
     totalPrice += doc.data().Price; // or doc.data().price (ensure case matches your data)
   });
+
+  console.log("https://fakestoreapi.com/products");
   return (
     <main className="w-full md:w-[97%] m-auto mb-10 dark:bg-[#1a1b23] h-[81.5vh]">
       <TitlePage

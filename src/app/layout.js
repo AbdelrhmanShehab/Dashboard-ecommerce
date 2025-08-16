@@ -4,7 +4,6 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { UserProvider } from "@/context/UserContext";
-
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({
   subsets: ["latin"],
@@ -19,11 +18,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="bg-[#fafafa] dark:bg-[#1a1b23]">
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
-        <ClientLayout>
-          <UserProvider>
-            <ThemeProvider>{children}</ThemeProvider>
-          </UserProvider>
-        </ClientLayout>
+        
+          <ClientLayout>
+            <UserProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </UserProvider>
+          </ClientLayout>
+        
       </body>
     </html>
   );

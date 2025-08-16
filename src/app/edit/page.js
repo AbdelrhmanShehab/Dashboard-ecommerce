@@ -4,22 +4,19 @@ import { useRouter } from "next/navigation";
 import { db } from "../../firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
 import Link from "next/link";
-import { useUser } from "@/context/UserContext"; // 1. import the context
-import MainBtn from "@/components/Mainbtn"; // Import MainBtn if needed
+import { useUser } from "@/context/UserContext";
+import MainBtn from "@/components/Mainbtn";
 
 export default function Edit() {
   const router = useRouter();
 
-  // 2. access user from context
   const { selectedUser } = useUser();
 
-  // 3. local state for form fields
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
   const [id, setId] = useState("");
 
-  // 4. set initial values when context updates
   useEffect(() => {
     if (selectedUser) {
       setName(selectedUser.Name || "");
@@ -27,8 +24,7 @@ export default function Edit() {
       setStatus(selectedUser.Status || "");
       setId(selectedUser.id || "");
     }
-  }, [selectedUser]); // only run when selectedUser is ready
-  // 5. form submission logic
+  }, [selectedUser]);
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -44,13 +40,12 @@ export default function Edit() {
         Role: role,
         Status: status,
       });
-      router.push("/users"); // go back to users page
+      router.push("/users"); 
     } catch (err) {
       console.error("Error updating user:", err);
     }
   };
 
-  // 6. render the form
   return (
     <div className="p-8 max-w-xl mx-auto dark:text-white">
       <h2 className="text-xl font-bold mb-4">Edit User</h2>

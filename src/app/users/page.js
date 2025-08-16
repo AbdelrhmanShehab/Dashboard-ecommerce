@@ -74,7 +74,6 @@ export default function UserPage() {
           paragraph="Manage your user accounts and roles."
         />
         <div className="flex flex-col md:flex-row items-center gap-4">
-          {/* ✅ Search input */}
           <input
             type="text"
             placeholder="Search by name..."
@@ -87,109 +86,112 @@ export default function UserPage() {
           </Link>
         </div>
       </div>
-
-      <div className="overflow-x-auto dark:bg-[#a0a0b0] roundeds">
-        <table className="md:min-w-full w-[90%] bg-white border dark:border-gray-600 border-gray-200 rounded-lg shadow">
-          <thead>
-            <tr className="bg-gray-100 text-gray-600 uppercase text-sm dark:bg-[#6366f1] dark:text-white">
-              {["Name", "Role", "Status", "Created"].map((field) => (
-                <th
-                  key={field}
-                  onClick={() => handleSort(field)}
-                  className="py-3 px-4 text-center cursor-pointer"
-                >
-                  {field}
-                  <Image
-                    src={sortIcon}
-                    className={`inline-block ml-2 cursor-pointer dark:invert dark:brightness-200 ${
-                      sortField === field ? "opacity-100" : "opacity-50"
-                    }`}
-                    width={18}
-                    height={18}
-                    alt="Sort"
-                  />
-                </th>
-              ))}
-              <th className="py-3 px-4 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="text-center dark:bg-[#0D1321]">
-            {loading && (
-              <tr>
-                <td colSpan={5} className="p-4">
-                  Loading...
-                </td>
-              </tr>
-            )}
-            {users?.length === 0 && !loading && (
-              <tr>
-                <td colSpan={5} className="p-4 text-gray-500">
-                  No users found.
-                </td>
-              </tr>
-            )}
-            {users?.map((user) => (
-              <tr
-                key={user.id}
-                className="border-t border-gray-200 dark:border-gray-600"
-              >
-                <td className="py-3 px-4">{user.Name}</td>
-                <td className="py-3 px-4">{user.Role}</td>
-                <td className="py-3 px-4">
-                  <span
-                    className={`inline-block px-2 py-1 rounded-lg text-xs ${
-                      user.Status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
+      <div className="w-full overflow-x-auto">
+        <div className="inline-block min-w-full align-middle">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+            <thead>
+              <tr className="bg-gray-100 text-gray-600 uppercase text-sm dark:bg-[#6366f1] dark:text-white">
+                {["Name", "Role", "Status", "Created"].map((field) => (
+                  <th
+                    key={field}
+                    onClick={() => handleSort(field)}
+                    className="py-3 px-4 text-center whitespace-nowrap cursor-pointer"
                   >
-                    {user.Status}
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  {user.Created
-                    ? format(user.Created.toDate(), "dd MMM yyyy")
-                    : "N/A"}
-                </td>
-                <td className="py-3 px-4 space-x-2 flex justify-center flex-col md:flex-row items-center">
-                  <Link href="/edit">
+                    {field}
+                    <Image
+                      src={sortIcon}
+                      className={`inline-block ml-2 cursor-pointer dark:invert dark:brightness-200 ${
+                        sortField === field ? "opacity-100" : "opacity-50"
+                      }`}
+                      width={18}
+                      height={18}
+                      alt="Sort"
+                    />
+                  </th>
+                ))}
+                <th className="py-3 px-4 text-center whitespace-nowrap">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="text-center dark:bg-[#0D1321]">
+              {loading && (
+                <tr>
+                  <td colSpan={5} className="p-4">
+                    Loading...
+                  </td>
+                </tr>
+              )}
+              {users?.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={5} className="p-4 text-gray-500">
+                    No users found.
+                  </td>
+                </tr>
+              )}
+              {users?.map((user) => (
+                <tr
+                  key={user.id}
+                  className="border-t border-gray-200 dark:border-gray-600"
+                >
+                  <td className="py-3 px-4">{user.Name}</td>
+                  <td className="py-3 px-4">{user.Role}</td>
+                  <td className="py-3 px-4">
+                    <span
+                      className={`inline-block px-2 py-1 rounded-lg text-xs ${
+                        user.Status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {user.Status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    {user.Created
+                      ? format(user.Created.toDate(), "dd MMM yyyy")
+                      : "N/A"}
+                  </td>
+                  <td className="py-3 px-4 space-x-2 flex justify-center flex-col md:flex-row items-center">
+                    <Link href="/edit">
+                      <button
+                        onClick={() => handleSetUserData(user)}
+                        className="px-2 py-1 rounded cursor-pointer"
+                      >
+                        <Image
+                          src="/icons/edit-icon.svg"
+                          width={20}
+                          height={20}
+                          alt="Edit"
+                          className="dark:invert dark:brightness-200"
+                        />
+                      </button>
+                    </Link>
                     <button
-                      onClick={() => handleSetUserData(user)}
+                      onClick={() => handleDelete(user.id)}
                       className="px-2 py-1 rounded cursor-pointer"
                     >
                       <Image
-                        src="/icons/edit-icon.svg"
+                        src="/icons/delete-icon.svg"
                         width={20}
                         height={20}
-                        alt="Edit"
+                        alt="Delete"
                         className="dark:invert dark:brightness-200"
                       />
                     </button>
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(user.id)}
-                    className="px-2 py-1 rounded cursor-pointer"
-                  >
-                    <Image
-                      src="/icons/delete-icon.svg"
-                      width={20}
-                      height={20}
-                      alt="Delete"
-                      className="dark:invert dark:brightness-200"
-                    />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {error && (
-              <tr>
-                <td colSpan={5} className="p-4 text-red-500">
-                  Error loading users: {error.message}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+              {error && (
+                <tr>
+                  <td colSpan={5} className="p-4 text-red-500">
+                    Error loading users: {error.message}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </main>
   );

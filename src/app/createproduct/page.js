@@ -1,12 +1,8 @@
-
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "@/firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import imageCompression from "browser-image-compression";
 
 export default function CreateProduct() {
   const [form, setForm] = useState({
@@ -18,33 +14,45 @@ export default function CreateProduct() {
     image: "",
   });
 
-  const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  // Load saved image from localStorage on page load
+  useEffect(() => {
+    const savedImage = localStorage.getItem("productImage");
+    if (savedImage) {
+      setForm((prev) => ({ ...prev, image: savedImage }));
+    }
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 800 * 1024) {
+      alert(
+        "Image too large! Please choose a smaller image (less than 800KB)."
+      );
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64Image = reader.result;
+      setForm((prev) => ({ ...prev, image: base64Image }));
 
-    const imageURL = URL.createObjectURL(file);
-    setForm((prev) => ({ ...prev, image: imageURL }));
+      // Save to localStorage so it survives refresh
+      localStorage.setItem("productImage", base64Image);
+    };
+    reader.readAsDataURL(file);
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (uploading) {
-      setError("Please wait for the image to finish uploading.");
-      return;
-    }
-
     const { name, category, status, price, stock, image } = form;
-
     if (!name || !category || !status || !price || !stock) {
       setError("All fields except image are required.");
       return;
@@ -57,10 +65,9 @@ export default function CreateProduct() {
         Status: status,
         Price: parseFloat(price),
         Stock: parseInt(stock),
-        Image: form.image ? form.image : "/images/product-default.svg",
+        Image: image || "/images/product-default.svg", 
         Created: serverTimestamp(),
       });
-
 
       setSuccess(true);
       setError("");
@@ -72,8 +79,11 @@ export default function CreateProduct() {
         stock: "",
         image: "",
       });
+
+      // Clear localStorage after saving
+      localStorage.removeItem("productImage");
     } catch (err) {
-      console.error("🔥 Firestore Error:", err.message);
+      console.error("Firestore Error:", err.message);
       setError("Failed to create product.");
     }
   };
@@ -167,24 +177,29 @@ export default function CreateProduct() {
         </div>
 
         <div>
-          <label className="block mb-1 font-medium">Product Image (optional)</label>
+          <label className="block mb-1 font-medium">
+            Product Image (optional)
+          </label>
           <input
             type="file"
             accept="image/*"
             onChange={handleImageChange}
             className="w-full border px-3 py-2 rounded"
           />
+          {form.image && (
+            <img
+              src={form.image}
+              alt="preview"
+              className="mt-3 h-24 rounded border object-cover"
+            />
+          )}
         </div>
 
         <button
           type="submit"
-          disabled={uploading}
-          className={`px-4 py-2 rounded text-white w-full ${uploading
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-[#111827] hover:bg-blue-700"
-            }`}
+          className="px-4 py-2 rounded text-white w-full bg-[#111827] cursor-pointer hover:bg-blue-700"
         >
-          {uploading ? "Uploading Image..." : "Create Product"}
+          Create Product
         </button>
       </form>
     </div>
