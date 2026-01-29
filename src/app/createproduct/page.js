@@ -1,28 +1,32 @@
 "use client";
-
-import { useState, useEffect } from "react";
-import { db } from "@/firebaseConfig";
+import { useState, useEffect } from "react"; // <-- add this
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage, db } from "../../firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { auth } from "../../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function CreateProduct() {
+  const handleCheckbox = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.checked });
+  };
+
   const [form, setForm] = useState({
     name: "",
     category: "",
     status: "",
     price: "",
     stock: "",
-    image: "",
+    imageUrl: null,
   });
-
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-
-  // Load saved image from localStorage on page load
   useEffect(() => {
-    const savedImage = localStorage.getItem("productImage");
-    if (savedImage) {
-      setForm((prev) => ({ ...prev, image: savedImage }));
-    }
+    const unsub = onAuthStateChanged(auth, (user) => {
+      console.log("AUTH USER:", user);
+    });
+
+    return () => unsub();
   }, []);
 
   const handleChange = (e) => {
@@ -32,61 +36,74 @@ export default function CreateProduct() {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     if (file.size > 800 * 1024) {
-      alert(
-        "Image too large! Please choose a smaller image (less than 800KB)."
-      );
+      alert("Image too large! Max 800KB");
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64Image = reader.result;
-      setForm((prev) => ({ ...prev, image: base64Image }));
-
-      // Save to localStorage so it survives refresh
-      localStorage.setItem("productImage", base64Image);
-    };
-    reader.readAsDataURL(file);
+    setForm((prev) => ({ ...prev, imageFile: file }));
   };
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      console.log("🔥 AUTH CHECK:", user ? user.uid : "NO USER");
+    });
+
+    return () => unsub();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const { name, category, status, price, stock, image } = form;
-    if (!name || !category || !status || !price || !stock) {
-      setError("All fields except image are required.");
-      return;
-    }
+    console.log("SUBMIT CLICKED");
 
     try {
-      await addDoc(collection(db, "products"), {
-        Name: name,
-        Category: category,
-        Status: status,
-        Price: parseFloat(price),
-        Stock: parseInt(stock),
-        Image: image || "/images/product-default.svg", 
-        Created: serverTimestamp(),
-      });
+      console.log("AUTH USER:", auth.currentUser);
+      console.log("FORM DATA:", form);
 
+      if (!auth.currentUser) {
+        throw new Error("User not authenticated");
+      }
+
+      let imageUrl = "";
+
+      if (form.imageFile) {
+        console.log("Uploading image...");
+
+        const imageRef = ref(
+          storage,
+          `hedoomyy/${Date.now()}-${form.imageFile.name}`,
+        );
+
+        await uploadBytes(imageRef, form.imageFile);
+        imageUrl = await getDownloadURL(imageRef);
+
+        console.log("Image uploaded:", imageUrl);
+      }
+      await addDoc(collection(db, "products"), {
+        title: form.name, // 🔥 match frontend
+        category: form.category,
+        status: form.status,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        image: imageUrl, // 🔥 match frontend
+        isBestSeller: form.isBestSeller,
+        createdAt: serverTimestamp(),
+      });
       setSuccess(true);
-      setError("");
       setForm({
         name: "",
         category: "",
         status: "",
         price: "",
         stock: "",
-        image: "",
+        imageUrl: null,
       });
-
-      // Clear localStorage after saving
-      localStorage.removeItem("productImage");
+      alert("Product added ✅");
     } catch (err) {
-      console.error("Firestore Error:", err.message);
-      setError("Failed to create product.");
+      console.error("SUBMIT ERROR:", err);
+      alert(err.message || "Something crashed ❌");
     }
   };
+  console.log("AUTH USER:", auth.currentUser);
 
   return (
     <div className="max-w-xl mx-auto mt-10 p-6 rounded-xl bg-white shadow">
@@ -125,9 +142,10 @@ export default function CreateProduct() {
             className="w-full border px-3 py-2 rounded"
           >
             <option value="">Select Category</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Accessories">Accessories</option>
-            <option value="Furniture">Furniture</option>
+            <option value="upper-wear">Upper-wear</option>
+            <option value="bottoms">Bottoms</option>
+            <option value="jackets">Jackets</option>
+            <option value="full-sets">Full-sets</option>
           </select>
         </div>
 
@@ -147,7 +165,7 @@ export default function CreateProduct() {
         </div>
 
         <div>
-          <label className="block mb-1 font-medium">Price ($)</label>
+          <label className="block mb-1 font-medium">Price (EGP)</label>
           <input
             type="number"
             name="price"
@@ -180,19 +198,31 @@ export default function CreateProduct() {
           <label className="block mb-1 font-medium">
             Product Image (optional)
           </label>
+
           <input
             type="file"
             accept="image/*"
             onChange={handleImageChange}
             className="w-full border px-3 py-2 rounded"
           />
-          {form.image && (
+
+          {form.imageFile && (
             <img
-              src={form.image}
-              alt="preview"
+              src={URL.createObjectURL(form.imageFile)}
+              alt="Preview"
               className="mt-3 h-24 rounded border object-cover"
             />
           )}
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            name="isBestSeller"
+            checked={form.isBestSeller}
+            onChange={handleCheckbox}
+            className="h-4 w-4"
+          />
+          <label className="text-sm font-medium">Mark as Best Seller ⭐</label>
         </div>
 
         <button

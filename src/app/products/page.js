@@ -34,7 +34,7 @@ export default function ProductsPage() {
   const sortedFilteredProducts = value?.docs
     .map((doc) => ({ id: doc.id, ...doc.data() }))
     .filter((product) =>
-      product.Name?.toLowerCase().startsWith(searchTerm.toLowerCase())
+      product.name?.toLowerCase().startsWith(searchTerm.toLowerCase()),
     )
     .sort((a, b) => {
       let aVal = a[sortField];
@@ -54,6 +54,10 @@ export default function ProductsPage() {
         ? String(aVal).localeCompare(String(bVal))
         : String(bVal).localeCompare(String(aVal));
     });
+  console.log(
+    "Firestore products:",
+    value?.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+  );
 
   return (
     <main className="p-4 dark:bg-[#1a1b23] h-[90vh] dark:text-white">
@@ -125,28 +129,28 @@ export default function ProductsPage() {
               >
                 <td className="py-3 px-4">
                   <img
-                    src={product.Image || defaultproduct}
-                    alt={product.Name}
+                    src={product.imageUrl || defaultproduct}
+                    alt={product.name}
                     className="w-12 h-12 object-cover mx-auto rounded"
                   />
                 </td>
-                <td className="py-3 px-4">{product.Name}</td>
-                <td className="py-3 px-4">${product.Price}</td>
-                <td className="py-3 px-4">{product.Stock}</td>
+                <td className="py-3 px-4">{product.name}</td>
+                <td className="py-3 px-4">${product.price}</td>
+                <td className="py-3 px-4">{product.stock}</td>
                 <td className="py-3 px-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${
-                      product.Status === "active"
+                      product.status === "active"
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {product.Status}
+                    {product.status}
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  {product.Created
-                    ? format(product.Created.toDate(), "dd MMM yyyy")
+                  {product.createdAt
+                    ? format(product.createdAt.toDate(), "dd MMM yyyy")
                     : "N/A"}
                 </td>
                 <td className="py-3 px-4">

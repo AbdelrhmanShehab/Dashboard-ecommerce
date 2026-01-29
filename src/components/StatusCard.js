@@ -11,7 +11,6 @@ const StatusCard = ({ title, value, secondaryValue, iconSrc, trend }) => {
 
       <div className="mt-4">
         <p className="text-2xl font-bold dark:text-white">{value}</p>
-
         {secondaryValue && (
           <p className="text-sm text-green-600">{secondaryValue}</p>
         )}

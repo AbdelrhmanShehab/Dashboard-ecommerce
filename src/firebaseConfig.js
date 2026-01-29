@@ -1,18 +1,19 @@
-// src/firebase.js
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBQ1dsL56KLBYDcCu-v6vzjshjDw_0US6Q",
-  authDomain: "products-dashboard-auth.firebaseapp.com",
-  projectId: "products-dashboard-auth",
-  storageBucket: "products-dashboard-auth.firebasestorage.app",
-  messagingSenderId: "307365322374",
-  appId: "1:307365322374:web:8860bdabd7de03e8077b07",
-  measurementId: "G-T56ZSS961D",
+  apiKey: "AIzaSyCQa6Nx0YPRM6v4A9-mXlIFP0-Gw_MSPCg",
+  authDomain: "hedoomyy.firebaseapp.com",
+  projectId: "hedoomyy",
+  storageBucket: "gs://hedoomyy.firebasestorage.app",
+  messagingSenderId: "298566845163",
+  appId: "1:298566845163:web:5c284e9ce1f53bc33474ae",
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const storage = getStorage(app);
-export { db };
