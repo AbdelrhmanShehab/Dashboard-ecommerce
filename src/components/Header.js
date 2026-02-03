@@ -1,53 +1,52 @@
-// components/Header.jsx
 "use client";
 import Image from "next/image";
 import darkmode from "../../public/icons/dark-mode-icon.svg";
 import lightmode from "../../public/icons/light-mode-icon.svg";
-import useTheme from "@/context/ThemeContext";
-
+import useTheme from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import { useRouter } from "next/navigation";
 const Header = ({ toggleSidebar }) => {
+  const { user, logout } = useAuth();
   const { togglemode, setToggleMode } = useTheme();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
 
   return (
-    <header className="bg-white border-b border-gray-200 dark:bg-[#1a1b23]">
+    <header className="bg-white border-b dark:bg-[#1a1b23]">
       <div className="w-[95%] m-auto flex justify-between items-center h-[64px]">
-        {/* Sidebar Toggle Button */}
-        <button
-          onClick={toggleSidebar}
-          className="w-6 h-6 relative focus:outline-none"
-        >
-          <Image
-            src="/icons/sidebar-icon.svg"
-            alt="sidebar icon"
-            fill
-            className="cursor-pointer dark:invert dark:brightness-200"
-          />
+
+        <button onClick={toggleSidebar} className="w-6 h-6 relative">
+          <Image src="/icons/sidebar-icon.svg" fill alt="menu" />
         </button>
 
-        {/* Dark mode toggle */}
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setToggleMode(!togglemode)}
-            className="w-6 h-6 relative focus:outline-none"
-          >
+
+          <button onClick={() => setToggleMode(!togglemode)}>
             <Image
               src={togglemode ? lightmode : darkmode}
-              alt="dark mode icon"
               width={22}
               height={22}
-              className="cursor-pointer dark:invert dark:brightness-200"
+              alt="mode"
             />
           </button>
 
-          {/* Profile picture */}
-          <div className="w-10 h-10 relative">
-            <Image
-              src="/images/profile-pic2.jpg"
-              alt="profile picture"
-              fill
-              className="rounded-full"
-            />
-          </div>
+          {user && (
+            <>
+              <span className="text-sm">{user.email}</span>
+
+
+              <button
+                onClick={handleLogout}
+                className="text-red-500 text-sm"
+              >
+                Logout
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

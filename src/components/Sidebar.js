@@ -9,7 +9,6 @@ const menuItems = [
   { title: "Users", icon: "user-icon.svg", href: "/users" },
   { title: "Products", icon: "product-icon.svg", href: "/products" },
   { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics" },
-  { title: "Settings", icon: "settings-icon.svg", href: "/settings" },
   { title: "Categories", icon: "settings-icon.svg", href: "/categories" },
 ];
 

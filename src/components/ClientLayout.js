@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, use } from "react";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
-import { ThemeProvider } from "@/context/ThemeContext";
+import Sidebar from "./Sidebar";
+import Header from "./Header";
+import { ThemeProvider } from "../context/ThemeContext";
 export default function ClientLayout({ children }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const toggleSidebar = () => {

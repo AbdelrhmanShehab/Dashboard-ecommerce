@@ -6,18 +6,23 @@ import { db } from "../../firebaseConfig";
 import Image from "next/image";
 import Link from "next/link";
 import format from "date-fns/format";
-import TitlePage from "@/components/TitlePage";
-import MainBtn from "@/components/Mainbtn";
-import { useUser } from "@/context/UserContext";
+import TitlePage from "../../components/TitlePage";
+import MainBtn from "../../components/Mainbtn";
+import { useUser } from "../../context/UserContext";
 import sortIcon from "../../../public/icons/sort-icon.svg";
+import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function UserPage() {
-  const [sortField, setSortField] = useState("Name");
+  const { user } = useAuth();
+  const router = useRouter();
+  const [sortField, setSortField] = useState("email");
   const [sortDirection, setSortDirection] = useState("asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [value, loading, error] = useCollection(collection(db, "users"));
   const { setSelectedUser } = useUser();
-
+  if (!user) router.push("/login");
+  if (!user) return null;
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -30,31 +35,32 @@ export default function UserPage() {
   const users = value?.docs
     .map((doc) => ({ id: doc.id, ...doc.data() }))
     .filter((user) =>
-      user.Name?.toLowerCase().startsWith(searchTerm.toLowerCase())
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()),
     )
+
     .sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
 
-      if (sortField === "Created") {
-        aVal = aVal?.toDate?.() ?? new Date(0);
-        bVal = bVal?.toDate?.() ?? new Date(0);
-        return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+      if (sortField === "createdAt") {
+        return sortDirection === "asc"
+          ? (aVal?.toDate?.() ?? 0) - (bVal?.toDate?.() ?? 0)
+          : (bVal?.toDate?.() ?? 0) - (aVal?.toDate?.() ?? 0);
       }
 
       return sortDirection === "asc"
-        ? String(aVal).localeCompare(String(bVal))
-        : String(bVal).localeCompare(String(aVal));
+        ? String(aVal ?? "").localeCompare(String(bVal ?? ""))
+        : String(bVal ?? "").localeCompare(String(aVal ?? ""));
     });
 
   const handleSetUserData = (user) => {
-    const { id, Name, Role, Status, Created } = user;
+    const { id, name, role, status, createdAt } = user;
     setSelectedUser({
       id,
-      Name,
-      Role,
-      Status,
-      Created: Created?.toDate() || null,
+      name,
+      role,
+      status,
+      createdAt: createdAt?.toDate() || null,
     });
   };
 
@@ -91,7 +97,7 @@ export default function UserPage() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
             <thead>
               <tr className="bg-gray-100 text-gray-600 uppercase text-sm dark:bg-[#6366f1] dark:text-white">
-                {["Name", "Role", "Status", "Created"].map((field) => (
+                {["name", "email", "role", "createdAt"].map((field) => (
                   <th
                     key={field}
                     onClick={() => handleSort(field)}
@@ -134,23 +140,24 @@ export default function UserPage() {
                   key={user.id}
                   className="border-t border-gray-200 dark:border-gray-600"
                 >
-                  <td className="py-3 px-4">{user.Name}</td>
-                  <td className="py-3 px-4">{user.Role}</td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4">{user.email}</td>
+                  <td className="capitalize">{user.role}</td>
+                  <td>
                     <span
                       className={`inline-block px-2 py-1 rounded-lg text-xs ${
-                        user.Status === "active"
+                        user.status === "active"
                           ? "bg-green-100 text-green-800"
                           : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {user.Status}
+                      {user.status}
                     </span>
                   </td>
+
                   <td className="py-3 px-4">
-                    {user.Created
-                      ? format(user.Created.toDate(), "dd MMM yyyy")
-                      : "N/A"}
+                    {user.createdAt
+                      ? format(user.createdAt.toDate(), "dd MMM yyyy")
+                      : "—"}
                   </td>
                   <td className="py-3 px-4 space-x-2 flex justify-center flex-col md:flex-row items-center">
                     <Link href="/edit">

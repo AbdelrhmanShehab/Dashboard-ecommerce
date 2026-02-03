@@ -18,6 +18,7 @@ export default function CreateProduct() {
     price: "",
     stock: "",
     imageUrl: null,
+    isBestSeller: false,
   });
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -96,6 +97,7 @@ export default function CreateProduct() {
         price: "",
         stock: "",
         imageUrl: null,
+        isBestSeller: false,
       });
       alert("Product added ✅");
     } catch (err) {

@@ -2,7 +2,7 @@
 
 import { useCollection } from "react-firebase-hooks/firestore";
 import { collection } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { db } from "../../firebaseConfig";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -14,7 +14,7 @@ import {
 } from "chart.js";
 import { Pie, Bar } from "react-chartjs-2";
 
-import TitlePage from "@/components/TitlePage";
+import TitlePage from "../../components/TitlePage";
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -23,19 +23,25 @@ ChartJS.register(
   LinearScale,
   BarElement
 );
-import LineChart from "@/components/LineChart";
+import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
+
+import LineChart from "../../components/LineChart";
 export default function AnalyticsPage() {
-  // retriving users data
+  const { user } = useAuth();
+  const router = useRouter();
   const [value, loading, error] = useCollection(collection(db, "users"));
+  const [productValue, productLoading, productError] = useCollection(
+    collection(db, "products")
+  );
+  
+  // retriving users data
   const users =
     value?.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) || [];
   // retriving products data
-  const [productValue, productLoading, productError] = useCollection(
-    collection(db, "products")
-  );
   const products =
     productValue?.docs.map((doc) => ({
       id: doc.id,
@@ -177,6 +183,8 @@ export default function AnalyticsPage() {
       },
     ],
   };
+    if (!user) router.push("/login");
+    if (!user) return null;
   return (
     <main className="container">
       <TitlePage

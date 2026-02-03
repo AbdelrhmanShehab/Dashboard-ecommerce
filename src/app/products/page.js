@@ -3,18 +3,24 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { db } from "@/firebaseConfig";
+import { db } from "../../firebaseConfig";
 import { collection, deleteDoc, doc } from "firebase/firestore";
 import { useCollection } from "react-firebase-hooks/firestore";
 import format from "date-fns/format";
 import defaultproduct from "../../../public/images/product-default.svg";
-import MainBtn from "@/components/Mainbtn";
+import MainBtn from "../../components/Mainbtn";
 import sortIcon from "../../../public/icons/sort-icon.svg";
+import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function ProductsPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("Name");
   const [sortDirection, setSortDirection] = useState("asc");
+  if (!user) router.push("/login");
+  if (!user) return null;
 
   const [value, loading, error] = useCollection(collection(db, "products"));
 
@@ -31,19 +37,33 @@ export default function ProductsPage() {
     }
   };
 
-  const sortedFilteredProducts = value?.docs
-    .map((doc) => ({ id: doc.id, ...doc.data() }))
-    .filter((product) =>
-      product.name?.toLowerCase().startsWith(searchTerm.toLowerCase()),
+  const products = value?.docs.map((doc) => {
+    const data = doc.data();
+
+    return {
+      id: doc.id,
+      name: data.title ?? "Untitled",
+      imageUrl: data.image ?? null,
+      price: Number(data.price ?? 0),
+      stock: Number(data.stock ?? 0),
+      status: data.status ?? "inactive",
+      createdAt: data.createdAt ?? data.Created ?? null,
+    };
+  });
+  const sortedFilteredProducts = products
+    ?.filter((product) =>
+      product.name.toLowerCase().startsWith(searchTerm.toLowerCase()),
     )
     .sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
 
       if (sortField === "Created") {
-        aVal = aVal?.toDate?.() ?? new Date(0);
-        bVal = bVal?.toDate?.() ?? new Date(0);
-        return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+        const aDate = a.createdAt?.toDate?.() ?? new Date(0);
+        const bDate = b.createdAt?.toDate?.() ?? new Date(0);
+        return sortDirection === "asc"
+          ? aDate.getTime() - bDate.getTime()
+          : bDate.getTime() - aDate.getTime();
       }
 
       if (typeof aVal === "number" && typeof bVal === "number") {
@@ -54,10 +74,6 @@ export default function ProductsPage() {
         ? String(aVal).localeCompare(String(bVal))
         : String(bVal).localeCompare(String(aVal));
     });
-  console.log(
-    "Firestore products:",
-    value?.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-  );
 
   return (
     <main className="p-4 dark:bg-[#1a1b23] h-[90vh] dark:text-white">
@@ -129,7 +145,7 @@ export default function ProductsPage() {
               >
                 <td className="py-3 px-4">
                   <img
-                    src={product.imageUrl || defaultproduct}
+                    src={product.imageUrl || defaultproduct.src}
                     alt={product.name}
                     className="w-12 h-12 object-cover mx-auto rounded"
                   />

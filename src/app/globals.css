@@ -46,3 +46,10 @@ body {
 .background {
   background-color: var(--background);
 }
+.input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}

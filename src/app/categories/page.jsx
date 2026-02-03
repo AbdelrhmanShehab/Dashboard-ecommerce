@@ -7,12 +7,14 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
-
+import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
 export default function Categories() {
   const [name, setName] = useState("");
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const { user } = useAuth();
+  const router = useRouter();
   const categoriesRef = collection(db, "categories");
 
   // Fetch categories
@@ -24,7 +26,8 @@ export default function Categories() {
     }));
     setCategories(data);
   };
-
+  if (!user) router.push("/login");
+  if (!user) return null;
   // Add category
   const addCategory = async () => {
     if (!name.trim()) return;

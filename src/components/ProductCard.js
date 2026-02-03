@@ -1,9 +1,8 @@
 // components/TopProducts.js
-import products from "../../data/products";
 import TitlePage from "./TitlePage";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { collection } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { db } from "../firebaseConfig";
 const parseDate = (dateStr) => new Date(dateStr);
 
 const ProductCard = () => {
@@ -50,8 +49,8 @@ const ProductCard = () => {
           <li key={product.id} className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <img
-                src={product.Image}
-                alt={product.Name}
+                src={product.imageUrl}
+                alt={product.name}
                 className="w-10 h-10 rounded-md object-cover border border-gray-300"
               />
               <div>

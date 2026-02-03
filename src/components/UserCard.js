@@ -1,7 +1,7 @@
 "use client";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { collection } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { db } from "../firebaseConfig";
 import TitlePage from "./TitlePage";
 
 const UserCard = () => {
