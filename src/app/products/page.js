@@ -16,55 +16,64 @@ import { useRouter } from "next/navigation";
 export default function ProductsPage() {
   const { user } = useAuth();
   const router = useRouter();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("Name");
   const [sortDirection, setSortDirection] = useState("asc");
+
   if (!user) router.push("/login");
   if (!user) return null;
 
-  const [value, loading, error] = useCollection(collection(db, "products"));
+  const [value, loading, error] = useCollection(
+    collection(db, "products")
+  );
 
   const deleteProduct = async (id) => {
+    if (!confirm("Delete this product?")) return;
     await deleteDoc(doc(db, "products", id));
   };
 
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      setSortDirection(prev => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
       setSortDirection("asc");
     }
   };
 
-  const products = value?.docs.map((doc) => {
+  const products = value?.docs.map(doc => {
     const data = doc.data();
-
     return {
       id: doc.id,
       name: data.title ?? "Untitled",
+      category: data.category ?? "-",
       imageUrl: data.image ?? null,
+      images: data.images ?? [],
       price: Number(data.price ?? 0),
       stock: Number(data.stock ?? 0),
       status: data.status ?? "inactive",
-      createdAt: data.createdAt ?? data.Created ?? null,
+      isBestSeller: data.isBestSeller ?? false,
+      colors: data.colors ?? [],
+      createdAt: data.createdAt ?? null,
     };
   });
+
   const sortedFilteredProducts = products
-    ?.filter((product) =>
-      product.name.toLowerCase().startsWith(searchTerm.toLowerCase()),
+    ?.filter(p =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
-      let aVal = a[sortField];
-      let bVal = b[sortField];
-
       if (sortField === "Created") {
         const aDate = a.createdAt?.toDate?.() ?? new Date(0);
         const bDate = b.createdAt?.toDate?.() ?? new Date(0);
         return sortDirection === "asc"
-          ? aDate.getTime() - bDate.getTime()
-          : bDate.getTime() - aDate.getTime();
+          ? aDate - bDate
+          : bDate - aDate;
       }
+
+      const aVal = a[sortField];
+      const bVal = b[sortField];
 
       if (typeof aVal === "number" && typeof bVal === "number") {
         return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
@@ -77,15 +86,16 @@ export default function ProductsPage() {
 
   return (
     <main className="p-4 dark:bg-[#1a1b23] h-[90vh] dark:text-white">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Products</h2>
-        <div className="flex items-center gap-4">
+
+        <div className="flex gap-3">
           <input
             type="text"
-            placeholder="Search by name..."
+            placeholder="Search..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 rounded-md border dark:bg-[#0d1321] dark:border-gray-600 dark:text-white"
+            onChange={e => setSearchTerm(e.target.value)}
+            className="px-4 py-2 border rounded-md"
           />
           <Link href="/createproduct">
             <MainBtn content="Add Product" />
@@ -93,103 +103,84 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto mt-6">
-        <table className="min-w-full bg-white border dark:border-gray-600 border-gray-200 rounded-lg shadow">
+      <div className="overflow-x-auto">
+        <table className="w-full bg-white dark:bg-[#0D1321] rounded-lg shadow">
           <thead>
-            <tr className="bg-gray-100 text-gray-600 uppercase text-sm dark:bg-[#6366f1] dark:text-white">
-              <th className="py-3 px-4">Image</th>
-
-              {["Name", "Price", "Stock", "Status", "Created"].map((field) => (
+            <tr className="bg-gray-100 dark:bg-[#6366f1] text-sm">
+              <th>Image</th>
+              {["Name", "Price", "Stock", "Category", "Created"].map(field => (
                 <th
                   key={field}
                   onClick={() => handleSort(field)}
-                  className="py-3 px-4 cursor-pointer text-center"
+                  className="cursor-pointer"
                 >
                   {field}
-                  <Image
-                    src={sortIcon}
-                    alt="Sort"
-                    width={18}
-                    height={18}
-                    className={`inline-block ml-2 dark:invert dark:brightness-200 ${
-                      sortField === field ? "opacity-100" : "opacity-50"
-                    }`}
-                  />
+                  <Image src={sortIcon} width={14} height={14} alt="" />
                 </th>
               ))}
-
-              <th className="py-3 px-4">Actions</th>
+              <th>Info</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody className="dark:bg-[#0D1321] text-center">
-            {loading && (
-              <tr>
-                <td colSpan="7" className="py-4">
-                  Loading...
-                </td>
-              </tr>
-            )}
 
-            {sortedFilteredProducts?.length === 0 && !loading && (
-              <tr>
-                <td colSpan="7" className="text-center py-4 text-gray-500">
-                  No products found.
-                </td>
-              </tr>
-            )}
-
-            {sortedFilteredProducts?.map((product) => (
-              <tr
-                key={product.id}
-                className="border-t border-gray-200 dark:border-gray-600"
-              >
-                <td className="py-3 px-4">
+          <tbody className="text-center">
+            {sortedFilteredProducts?.map(product => (
+              <tr key={product.id} className="border-t">
+                <td>
                   <img
                     src={product.imageUrl || defaultproduct.src}
-                    alt={product.name}
-                    className="w-12 h-12 object-cover mx-auto rounded"
+                    className="w-12 h-12 mx-auto rounded object-cover"
                   />
                 </td>
-                <td className="py-3 px-4">{product.name}</td>
-                <td className="py-3 px-4">${product.price}</td>
-                <td className="py-3 px-4">{product.stock}</td>
-                <td className="py-3 px-4">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      product.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {product.status}
-                  </span>
-                </td>
-                <td className="py-3 px-4">
+                <td>{product.name}</td>
+                <td>EGP {product.price}</td>
+                <td>{product.stock}</td>
+                <td>{product.category}</td>
+                <td>
                   {product.createdAt
                     ? format(product.createdAt.toDate(), "dd MMM yyyy")
-                    : "N/A"}
+                    : "-"}
                 </td>
-                <td className="py-3 px-4">
+
+                {/* IMPORTANT INFO */}
+                <td className="text-xs space-y-1">
+                  {product.isBestSeller && (
+                    <span className="text-green-600">★ Best Seller</span>
+                  )}
+                  <div>{product.images.length} images</div>
+                  <div>{product.colors.length} colors</div>
+                </td>
+
+                <td className="flex gap-2 justify-center">
+                  <button
+                    onClick={() =>
+                      router.push(`/products/edit/${product.id}`)
+                    }
+                    className="text-blue-600 text-sm"
+                  >
+                    Edit
+                  </button>
+
                   <button
                     onClick={() => deleteProduct(product.id)}
-                    className="px-2 py-1 rounded cursor-pointer"
+                    className="text-red-600 text-sm"
                   >
-                    <Image
-                      src="/icons/delete-icon.svg"
-                      width={20}
-                      height={20}
-                      alt="Delete"
-                      className="dark:invert dark:brightness-200"
-                    />
+                    Delete
                   </button>
                 </td>
               </tr>
             ))}
 
+            {loading && (
+              <tr>
+                <td colSpan="9">Loading...</td>
+              </tr>
+            )}
+
             {error && (
               <tr>
-                <td colSpan="7" className="py-4 text-red-500 text-center">
-                  Error: {error.message}
+                <td colSpan="9" className="text-red-500">
+                  {error.message}
                 </td>
               </tr>
             )}
