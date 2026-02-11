@@ -17,10 +17,11 @@ export default function CreateProduct() {
     name: "",
     description: "",
     category: "",
-    status: "", 
+    status: "active",
     price: "",
     stock: "",
     colors: [],
+    sizes: [],
     imageFiles: [],
     isBestSeller: false,
   });
@@ -54,16 +55,39 @@ export default function CreateProduct() {
     }));
   };
 
-  const handleColorsChange = (e) => {
+  // 🔥 ADD COLOR
+  const addColor = (color) => {
+    if (!color || form.colors.includes(color)) return;
     setForm(prev => ({
       ...prev,
-      colors: e.target.value
-        .split(",")
-        .map(c => c.trim())
-        .filter(Boolean),
+      colors: [...prev.colors, color],
     }));
   };
 
+  const removeColor = (color) => {
+    setForm(prev => ({
+      ...prev,
+      colors: prev.colors.filter(c => c !== color),
+    }));
+  };
+
+  // 🔥 ADD SIZE
+  const addSize = (size) => {
+    if (!size || form.sizes.includes(size)) return;
+    setForm(prev => ({
+      ...prev,
+      sizes: [...prev.sizes, size],
+    }));
+  };
+
+  const removeSize = (size) => {
+    setForm(prev => ({
+      ...prev,
+      sizes: prev.sizes.filter(s => s !== size),
+    }));
+  };
+
+  // 🔥 IMAGES
   const handleImagesChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 5) {
@@ -73,6 +97,7 @@ export default function CreateProduct() {
     setForm(prev => ({ ...prev, imageFiles: files }));
   };
 
+  // 🔥 SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -103,6 +128,7 @@ export default function CreateProduct() {
         price: Number(form.price),
         stock: Number(form.stock),
         colors: form.colors,
+        sizes: form.sizes,
         images: imageUrls,
         isBestSeller: form.isBestSeller,
         createdAt: serverTimestamp(),
@@ -110,17 +136,20 @@ export default function CreateProduct() {
       });
 
       setSuccess(true);
+
       setForm({
         name: "",
         description: "",
         category: "",
-        status: "",
+        status: "active",
         price: "",
         stock: "",
         colors: [],
+        sizes: [],
         imageFiles: [],
         isBestSeller: false,
       });
+
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -129,37 +158,41 @@ export default function CreateProduct() {
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 rounded-xl bg-white shadow">
-      <h1 className="text-2xl font-bold mb-6">Create Product</h1>
+    <div className="max-w-2xl mx-auto mt-10 p-8 rounded-2xl bg-white shadow-lg">
+      <h1 className="text-3xl font-bold mb-6">Create Product</h1>
 
-      {error && <p className="bg-red-100 text-red-700 p-2 rounded">{error}</p>}
-      {success && <p className="bg-green-100 text-green-700 p-2 rounded">Product created ✅</p>}
+      {error && <p className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</p>}
+      {success && <p className="bg-green-100 text-green-700 p-3 rounded mb-4">Product created successfully ✅</p>}
 
-      <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* NAME */}
         <input
           name="name"
           value={form.name}
           onChange={handleChange}
           placeholder="Product name"
           required
-          className="w-full border px-3 py-2 rounded"
+          className="w-full border px-4 py-3 rounded-xl"
         />
 
+        {/* DESCRIPTION */}
         <textarea
           name="description"
           value={form.description}
           onChange={handleChange}
           placeholder="Product description"
           required
-          className="w-full border px-3 py-2 rounded min-h-[120px]"
+          className="w-full border px-4 py-3 rounded-xl min-h-[120px]"
         />
 
+        {/* CATEGORY */}
         <select
           name="category"
           value={form.category}
           onChange={handleChange}
           required
-          className="w-full border px-3 py-2 rounded"
+          className="w-full border px-4 py-3 rounded-xl"
         >
           <option value="">Select category</option>
           {categories.map(cat => (
@@ -169,25 +202,126 @@ export default function CreateProduct() {
           ))}
         </select>
 
-        <input
-          placeholder="Colors (comma separated)"
-          onChange={handleColorsChange}
-          className="w-full border px-3 py-2 rounded"
-        />
+        {/* PRICE + STOCK */}
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="number"
+            name="price"
+            value={form.price}
+            onChange={handleChange}
+            placeholder="Price (EGP)"
+            required
+            className="border px-4 py-3 rounded-xl"
+          />
+          <input
+            type="number"
+            name="stock"
+            value={form.stock}
+            onChange={handleChange}
+            placeholder="Stock"
+            required
+            className="border px-4 py-3 rounded-xl"
+          />
+        </div>
 
-        <input type="file" multiple accept="image/*" onChange={handleImagesChange} />
+        {/* COLORS */}
+        <div>
+          <h3 className="font-semibold mb-2">Colors</h3>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              id="colorInput"
+              placeholder="Add color"
+              className="border px-3 py-2 rounded flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const input = document.getElementById("colorInput");
+                addColor(input.value.trim());
+                input.value = "";
+              }}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {form.colors.map((color, i) => (
+              <div key={i} className="px-3 py-1 bg-purple-100 rounded-full text-sm flex gap-2">
+                {color}
+                <button type="button" onClick={() => removeColor(color)}>✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <input type="number" name="price" value={form.price} onChange={handleChange} placeholder="Price" required className="w-full border px-3 py-2 rounded" />
-        <input type="number" name="stock" value={form.stock} onChange={handleChange} placeholder="Stock" required className="w-full border px-3 py-2 rounded" />
+        {/* SIZES */}
+        <div>
+          <h3 className="font-semibold mb-2">Sizes (kg)</h3>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              id="sizeInput"
+              placeholder="Example: 80kg"
+              className="border px-3 py-2 rounded flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const input = document.getElementById("sizeInput");
+                addSize(input.value.trim());
+                input.value = "";
+              }}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {form.sizes.map((size, i) => (
+              <div key={i} className="px-3 py-1 bg-blue-100 rounded-full text-sm flex gap-2">
+                {size}
+                <button type="button" onClick={() => removeSize(size)}>✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <label className="flex gap-2 text-sm">
-          <input type="checkbox" name="isBestSeller" checked={form.isBestSeller} onChange={handleChange} />
-          Best Seller ⭐
+        {/* IMAGES */}
+        <div>
+          <h3 className="font-semibold mb-2">Images (Max 5)</h3>
+          <input type="file" multiple accept="image/*" onChange={handleImagesChange} />
+          <div className="flex gap-3 mt-3 flex-wrap">
+            {form.imageFiles.map((file, i) => (
+              <img
+                key={i}
+                src={URL.createObjectURL(file)}
+                alt="preview"
+                className="w-20 h-20 object-cover rounded-lg"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* BEST SELLER */}
+        <label className="flex gap-2 text-sm items-center">
+          <input
+            type="checkbox"
+            name="isBestSeller"
+            checked={form.isBestSeller}
+            onChange={handleChange}
+          />
+          Mark as Best Seller ⭐
         </label>
 
-        <button disabled={loading} className="w-full bg-black text-white py-2 rounded">
+        <button
+          disabled={loading}
+          className="w-full bg-black text-white py-3 rounded-xl"
+        >
           {loading ? "Saving..." : "Create Product"}
         </button>
+
       </form>
     </div>
   );
