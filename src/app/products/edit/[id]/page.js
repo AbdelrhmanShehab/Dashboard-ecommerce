@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { db, storage } from "../../../../firebaseConfig";
+import { db, storage } from "../../../../firebaseConfig"; // ✅ FIXED PATH
 import {
   doc,
   getDoc,
@@ -12,11 +12,13 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function EditProductPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id; // ✅ safe access
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     title: "",
@@ -24,7 +26,7 @@ export default function EditProductPage() {
     category: "",
     price: "",
     stock: "",
-    status: "",
+    status: "active",
     isBestSeller: false,
     colors: [],
     images: [],
@@ -32,32 +34,62 @@ export default function EditProductPage() {
 
   const [newImages, setNewImages] = useState([]);
 
+  // ✅ FETCH PRODUCT SAFELY
   useEffect(() => {
+    if (!id) return;
+
     const fetchProduct = async () => {
-      const snap = await getDoc(doc(db, "products", id));
-      if (!snap.exists()) return router.push("/products");
+      try {
+        const snap = await getDoc(doc(db, "products", id));
 
-      const data = snap.data();
+        if (!snap.exists()) {
+          router.push("/products");
+          return;
+        }
 
-      setForm({
-        title: data.title ?? "",
-        description: data.description ?? "",
-        category: data.category ?? "",
-        price: data.price ?? "",
-        stock: data.stock ?? "",
-        status: data.status ?? "active",
-        isBestSeller: data.isBestSeller ?? false,
-        colors: data.colors ?? [],
-        images: data.images ?? [],
-      });
+        const data = snap.data();
 
-      setLoading(false);
+        setForm({
+          title: data.title || "",
+          description: data.description || "",
+          category: data.category || "",
+          price: data.price || "",
+          stock: data.stock || "",
+          status: data.status || "active",
+          isBestSeller: data.isBestSeller || false,
+          colors: data.colors || [],
+          images: data.images || [],
+        });
+      } catch (err) {
+        setError("Failed to load product");
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchProduct();
-  }, [id, router]);
+  }, [id]);
 
-  const handleImageUpload = async () => {
+  // ✅ VALIDATION (NOW ACTUALLY USED)
+  const validateForm = () => {
+    if (!form.title.trim()) return "Title is required";
+    if (!form.description.trim()) return "Description is required";
+    if (!form.category.trim()) return "Category is required";
+    if (!form.price || Number(form.price) <= 0)
+      return "Valid price required";
+    if (form.stock === "" || Number(form.stock) < 0)
+      return "Valid stock required";
+    if (!form.status) return "Status required";
+    if (!form.colors.length)
+      return "Add at least one color";
+    if (!form.images.length && !newImages.length)
+      return "Add at least one image";
+
+    return null;
+  };
+
+  // ✅ IMAGE UPLOAD
+  const uploadNewImages = async () => {
     const uploadedUrls = [];
 
     for (const file of newImages) {
@@ -74,25 +106,40 @@ export default function EditProductPage() {
     return uploadedUrls;
   };
 
+  // ✅ SAVE WITH VALIDATION
   const handleSave = async () => {
-    setSaving(true);
+    setError("");
 
-    let updatedImages = [...form.images];
-
-    if (newImages.length > 0) {
-      const uploaded = await handleImageUpload();
-      updatedImages = [...updatedImages, ...uploaded];
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
     }
 
-    await updateDoc(doc(db, "products", id), {
-      ...form,
-      images: updatedImages,
-      price: Number(form.price),
-      stock: Number(form.stock),
-      updatedAt: serverTimestamp(),
-    });
+    try {
+      setSaving(true);
 
-    router.push("/products");
+      let updatedImages = [...form.images];
+
+      if (newImages.length > 0) {
+        const uploaded = await uploadNewImages();
+        updatedImages = [...updatedImages, ...uploaded];
+      }
+
+      await updateDoc(doc(db, "products", id), {
+        ...form,
+        images: updatedImages,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        updatedAt: serverTimestamp(),
+      });
+
+      router.push("/products");
+    } catch (err) {
+      setError("Something went wrong while saving");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <p className="p-6">Loading...</p>;
@@ -102,6 +149,12 @@ export default function EditProductPage() {
       <h1 className="text-2xl font-semibold mb-6">
         Edit Product
       </h1>
+
+      {error && (
+        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+          {error}
+        </div>
+      )}
 
       {/* TITLE */}
       <input
@@ -117,10 +170,7 @@ export default function EditProductPage() {
       <textarea
         value={form.description}
         onChange={e =>
-          setForm({
-            ...form,
-            description: e.target.value,
-          })
+          setForm({ ...form, description: e.target.value })
         }
         placeholder="Description"
         className="w-full border p-3 rounded mb-4 min-h-[120px]"
@@ -132,10 +182,7 @@ export default function EditProductPage() {
           type="number"
           value={form.price}
           onChange={e =>
-            setForm({
-              ...form,
-              price: e.target.value,
-            })
+            setForm({ ...form, price: e.target.value })
           }
           placeholder="Price"
           className="border p-3 rounded"
@@ -144,10 +191,7 @@ export default function EditProductPage() {
           type="number"
           value={form.stock}
           onChange={e =>
-            setForm({
-              ...form,
-              stock: e.target.value,
-            })
+            setForm({ ...form, stock: e.target.value })
           }
           placeholder="Stock"
           className="border p-3 rounded"
@@ -158,10 +202,7 @@ export default function EditProductPage() {
       <select
         value={form.status}
         onChange={e =>
-          setForm({
-            ...form,
-            status: e.target.value,
-          })
+          setForm({ ...form, status: e.target.value })
         }
         className="w-full border p-3 rounded mb-4"
       >
@@ -190,11 +231,30 @@ export default function EditProductPage() {
           Colors
         </h3>
 
-        <div className="flex flex-wrap gap-2 mb-2">
+        <input
+          type="text"
+          placeholder="Type color and press Enter"
+          className="border p-2 rounded w-full mb-2"
+          onKeyDown={e => {
+            if (e.key === "Enter" && e.target.value.trim()) {
+              e.preventDefault();
+              setForm(prev => ({
+                ...prev,
+                colors: [
+                  ...prev.colors,
+                  e.target.value.trim(),
+                ],
+              }));
+              e.target.value = "";
+            }
+          }}
+        />
+
+        <div className="flex flex-wrap gap-2">
           {form.colors.map((color, i) => (
             <div
               key={i}
-              className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm flex items-center gap-2"
+              className="px-3 py-1 bg-purple-100 rounded-full text-sm flex gap-2"
             >
               {color}
               <button
@@ -202,7 +262,7 @@ export default function EditProductPage() {
                   setForm(prev => ({
                     ...prev,
                     colors: prev.colors.filter(
-                      c => c !== color
+                      (_, index) => index !== i
                     ),
                   }))
                 }
@@ -222,10 +282,7 @@ export default function EditProductPage() {
 
         <div className="flex gap-3 flex-wrap">
           {form.images.map((img, i) => (
-            <div
-              key={i}
-              className="relative w-24 h-24"
-            >
+            <div key={i} className="relative w-24 h-24">
               <img
                 src={img}
                 className="w-full h-full object-cover rounded"
@@ -248,7 +305,7 @@ export default function EditProductPage() {
         </div>
       </div>
 
-      {/* ADD NEW IMAGES */}
+      {/* NEW IMAGES */}
       <input
         type="file"
         multiple
