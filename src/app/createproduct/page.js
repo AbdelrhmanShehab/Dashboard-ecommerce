@@ -1,28 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
 import { db, storage } from "../../firebaseConfig";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, getDocs } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
-
-export default function EditProductPage() {
-  const params = useParams();
-  const id = Array.isArray(params?.id)
-    ? params.id[0]
-    : params?.id;
-
-
+import VariantInput from "../../components/VariantInput";
+import VariantTable from "../../components/VariantTable";
+export default function CreateProductPage() {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,42 +21,22 @@ export default function EditProductPage() {
     description: "",
     category: "",
     price: "",
-    stock: "",
     status: "active",
     isBestSeller: false,
-    colors: [],
-    sizes: [],
-    images: [],
   });
 
+  const [colors, setColors] = useState([]);
+  const [sizes, setSizes] = useState([]);
+
+  const [colorInput, setColorInput] = useState("");
+  const [sizeInput, setSizeInput] = useState("");
+
+  const [variants, setVariants] = useState([]);
+
   const [newImages, setNewImages] = useState([]);
-const uploadNewImages = async (files) => {
-    const uploadedUrls = [];
+  const [imagePreviews, setImagePreviews] = useState([]);
 
-    for (const file of files) {
-      const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.5,
-        maxWidthOrHeight: 1200,
-        useWebWorker: true,
-      });
-
-      const imageRef = ref(
-        storage,
-        `products/${Date.now()}-${file.name}`
-      );
-
-      await uploadBytes(imageRef, compressedFile, {
-        contentType: compressedFile.type,
-        cacheControl: "public,max-age=31536000",
-      });
-
-      const url = await getDownloadURL(imageRef);
-      uploadedUrls.push(url);
-    }
-
-    return uploadedUrls;
-  };
-  // 🔹 Fetch Categories
+  /* ---------------- FETCH CATEGORIES ---------------- */
   useEffect(() => {
     const fetchCategories = async () => {
       const snap = await getDocs(collection(db, "categories"));
@@ -79,94 +47,97 @@ const uploadNewImages = async (files) => {
         }))
       );
     };
-
     fetchCategories();
   }, []);
 
-  // 🔹 Fetch Product
+  /* ---------------- GENERATE VARIANTS ---------------- */
   useEffect(() => {
-    if (!id) {
-      setLoading(false);
+    setVariants(prevVariants => {
+      const generated = [];
+
+      colors.forEach(color => {
+        sizes.forEach(size => {
+          const id = `${color}-${size}`
+            .toLowerCase()
+            .replace(/\s/g, "");
+
+          const existing = prevVariants.find(v => v.id === id);
+
+          generated.push({
+            id,
+            color,
+            size,
+            stock: existing ? existing.stock : 0,
+          });
+        });
+      });
+
+      return generated;
+    });
+  }, [colors, sizes]);
+
+
+  /* ---------------- IMAGE SELECT ---------------- */
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+
+    if (files.length + newImages.length > 7) {
+      setError("Maximum 7 images allowed");
       return;
     }
 
+    setNewImages(prev => [...prev, ...files]);
 
-    const fetchProduct = async () => {
-      try {
-        const snap = await getDoc(doc(db, "products", id));
+    const previews = files.map(file =>
+      URL.createObjectURL(file)
+    );
 
-        if (!snap.exists()) {
-          router.push("/products");
-          return;
-        }
+    setImagePreviews(prev => [...prev, ...previews]);
+  };
 
-        const data = snap.data();
+  /* ---------------- IMAGE UPLOAD ---------------- */
+  const uploadImages = async () => {
+    const uploaded = [];
 
-        setForm({
-          title: data.title ?? "",
-          description: data.description ?? "",
-          category: data.category ?? "",
-          price: data.price ?? "",
-          stock: data.stock ?? "",
-          status: data.status ?? "active",
-          isBestSeller: data.isBestSeller ?? false,
-          colors: data.colors ?? [],
-          sizes: data.sizes ?? [],
-          images: data.images ?? [],
-        });
+    for (const file of newImages) {
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1200,
+      });
 
-      } catch (err) {
-        console.error("Firestore error:", err);
-        setError("Failed to load product");
-      }
-      finally {
-        setLoading(false); // 🚨 Always stop loading
-      }
-    };
+      const imageRef = ref(
+        storage,
+        `products/${Date.now()}-${file.name}`
+      );
 
-    fetchProduct();
+      await uploadBytes(imageRef, compressed);
+      const url = await getDownloadURL(imageRef);
+      uploaded.push(url);
+    }
 
-  }, [id]);
+    return uploaded;
+  };
 
-
-  // ---------- VALIDATION ----------
-  const validateForm = () => {
-    if (!form.title.trim()) return "Title is required";
-    if (!form.description.trim()) return "Description is required";
-    if (!form.category.trim()) return "Category is required";
-
-    if (!form.price || Number(form.price) <= 0)
-      return "Price must be greater than 0";
-
-    if (form.stock === "" || Number(form.stock) < 0)
-      return "Stock must be 0 or more";
-
-    if (!form.status) return "Status is required";
-
-    if (!form.colors.length) return "Add at least one color";
-    if (!form.sizes.length) return "Add at least one size";
-
-    if (!form.images.length && !newImages.length)
-      return "Add at least one image";
-
-    if (form.images.length + newImages.length > 5)
-      return "Maximum 5 images allowed";
+  /* ---------------- VALIDATION ---------------- */
+  const validate = () => {
+    if (!form.title.trim()) return "Title required";
+    if (!form.description.trim()) return "Description required";
+    if (!form.category) return "Category required";
+    if (!form.price || Number(form.price) <= 0) return "Valid price required";
+    if (!colors.length) return "Add at least one color";
+    if (!sizes.length) return "Add at least one size";
+    if (!variants.length) return "Variants not generated";
+    if (variants.some(v => v.stock < 0)) return "Invalid stock value";
+    if (!newImages.length) return "Add at least one image";
 
     return null;
   };
 
-  // ---------- IMAGE UPLOAD ----------
-  
-  // ---------- SAVE ----------
+  /* ---------------- SAVE PRODUCT ---------------- */
   const handleSave = async () => {
     setError("");
-    const validationError = validateForm();
 
-    if (newImages.length > 0) {
-      const uploaded = await uploadNewImages(newImages);
-      updatedImages = [...updatedImages, ...uploaded];
-    }
-
+    const validationError = validate();
     if (validationError) {
       setError(validationError);
       return;
@@ -175,41 +146,39 @@ const uploadNewImages = async (files) => {
     try {
       setSaving(true);
 
-      let updatedImages = [...form.images];
+      const uploadedImages = await uploadImages();
+      const totalStock = variants.reduce(
+        (sum, v) => sum + v.stock,
+        0
+      );
 
-      if (newImages.length > 0) {
-        const uploaded = await uploadNewImages();
-        updatedImages = [...updatedImages, ...uploaded];
-      }
-
-      await updateDoc(doc(db, "products", id), {
+      await addDoc(collection(db, "products"), {
         title: form.title,
         description: form.description,
         category: form.category,
         price: Number(form.price),
-        stock: Number(form.stock),
         status: form.status,
         isBestSeller: form.isBestSeller,
-        colors: form.colors,
-        sizes: form.sizes,
-        images: updatedImages,
+        images: uploadedImages,
+        variants,
+        totalStock, // ✅ ADD THIS
+        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
 
       router.push("/products");
 
     } catch (err) {
-      setError("Something went wrong");
+      console.error(err);
+      setError("Failed to create product");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <p className="p-6">Loading...</p>;
-
   return (
-    <div className="max-w-3xl mx-auto p-8 bg-white rounded-2xl shadow-lg">
-      <h1 className="text-3xl font-bold mb-6">Edit Product</h1>
+    <div className="max-w-4xl mx-auto p-8 bg-white rounded-2xl shadow-lg">
+      <h1 className="text-3xl font-bold mb-6">Create Product</h1>
 
       {error && (
         <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
@@ -219,25 +188,25 @@ const uploadNewImages = async (files) => {
 
       {/* TITLE */}
       <input
+        placeholder="Title"
+        className="w-full border p-3 rounded mb-4"
         value={form.title}
         onChange={e => setForm({ ...form, title: e.target.value })}
-        placeholder="Product Title"
-        className="w-full border p-3 rounded mb-4"
       />
 
       {/* DESCRIPTION */}
       <textarea
+        placeholder="Description"
+        className="w-full border p-3 rounded mb-4"
         value={form.description}
         onChange={e => setForm({ ...form, description: e.target.value })}
-        placeholder="Description"
-        className="w-full border p-3 rounded mb-4 min-h-[120px]"
       />
 
       {/* CATEGORY */}
       <select
+        className="w-full border p-3 rounded mb-4"
         value={form.category}
         onChange={e => setForm({ ...form, category: e.target.value })}
-        className="w-full border p-3 rounded mb-4"
       >
         <option value="">Select Category</option>
         {categories.map(cat => (
@@ -247,162 +216,52 @@ const uploadNewImages = async (files) => {
         ))}
       </select>
 
-      {/* PRICE + STOCK */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <input
-          type="number"
-          value={form.price}
-          onChange={e => setForm({ ...form, price: e.target.value })}
-          placeholder="Price"
-          className="border p-3 rounded"
-        />
-        <input
-          type="number"
-          value={form.stock}
-          onChange={e => setForm({ ...form, stock: e.target.value })}
-          placeholder="Stock"
-          className="border p-3 rounded"
-        />
-      </div>
-
-      {/* STATUS */}
-      <select
-        value={form.status}
-        onChange={e => setForm({ ...form, status: e.target.value })}
-        className="w-full border p-3 rounded mb-4"
-      >
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-      </select>
-
-      {/* BEST SELLER */}
-      <label className="flex items-center gap-2 mb-6">
-        <input
-          type="checkbox"
-          checked={form.isBestSeller}
-          onChange={e =>
-            setForm({ ...form, isBestSeller: e.target.checked })
-          }
-        />
-        Best Seller ⭐
-      </label>
+      {/* PRICE */}
+      <input
+        type="number"
+        placeholder="Price"
+        className="w-full border p-3 rounded mb-6"
+        value={form.price}
+        onChange={e => setForm({ ...form, price: e.target.value })}
+      />
 
       {/* COLORS */}
-      <h3 className="font-semibold mb-2">Colors</h3>
-      <input
-        type="text"
-        placeholder="Add color and press Enter"
-        onKeyDown={e => {
-          if (e.key === "Enter" && e.target.value.trim()) {
-            e.preventDefault();
-            setForm(prev => ({
-              ...prev,
-              colors: [...prev.colors, e.target.value.trim()],
-            }));
-            e.target.value = "";
-          }
-        }}
-        className="border p-2 rounded mb-2 w-full"
+      <VariantInput
+        label="Colors"
+        value={colorInput}
+        setValue={setColorInput}
+        items={colors}
+        setItems={setColors}
       />
-      <div className="flex flex-wrap gap-2 mb-6">
-        {form.colors.map((color, i) => (
-          <span
-            key={i}
-            className="bg-purple-100 px-3 py-1 rounded-full text-sm flex gap-2"
-          >
-            {color}
-            <button
-              onClick={() =>
-                setForm(prev => ({
-                  ...prev,
-                  colors: prev.colors.filter(c => c !== color),
-                }))
-              }
-            >
-              ✕
-            </button>
-          </span>
-        ))}
-      </div>
 
       {/* SIZES */}
-      <h3 className="font-semibold mb-2">Sizes</h3>
-      <input
-        type="text"
-        placeholder="Add size (e.g. 80kg) and press Enter"
-        onKeyDown={e => {
-          if (e.key === "Enter" && e.target.value.trim()) {
-            e.preventDefault();
-            setForm(prev => ({
-              ...prev,
-              sizes: [...prev.sizes, e.target.value.trim()],
-            }));
-            e.target.value = "";
-          }
-        }}
-        className="border p-2 rounded mb-2 w-full"
+      <VariantInput
+        label="Sizes"
+        value={sizeInput}
+        setValue={setSizeInput}
+        items={sizes}
+        setItems={setSizes}
       />
-      <div className="flex flex-wrap gap-2 mb-6">
-        {form.sizes.map((size, i) => (
-          <span
-            key={i}
-            className="bg-blue-100 px-3 py-1 rounded-full text-sm flex gap-2"
-          >
-            {size}
-            <button
-              onClick={() =>
-                setForm(prev => ({
-                  ...prev,
-                  sizes: prev.sizes.filter(s => s !== size),
-                }))
-              }
-            >
-              ✕
-            </button>
-          </span>
-        ))}
-      </div>
 
-      {/* EXISTING IMAGES */}
-      <h3 className="font-semibold mb-2">Images</h3>
-      <div className="flex gap-3 flex-wrap mb-4">
-        {form.images.map((img, i) => (
-          <div key={i} className="relative w-24 h-24">
-            <img
-              src={img}
-              className="w-full h-full rounded object-cover"
-            />
-            <button
-              className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded"
-              onClick={() =>
-                setForm(prev => ({
-                  ...prev,
-                  images: prev.images.filter((_, index) => index !== i),
-                }))
-              }
-            >
-              X
-            </button>
-          </div>
-        ))}
-      </div>
+      {/* VARIANT STOCK TABLE */}
+      <VariantTable variants={variants} setVariants={setVariants} />
 
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={e =>
-          setNewImages(Array.from(e.target.files || []))
-        }
-        className="mb-6"
-      />
+      {/* IMAGE UPLOAD */}
+      <div className="mt-6">
+        <input type="file" multiple accept="image/*" onChange={handleImageSelect} />
+        <div className="flex gap-3 mt-3 flex-wrap">
+          {imagePreviews.map((img, i) => (
+            <img key={i} src={img} className="w-20 h-20 object-cover rounded" />
+          ))}
+        </div>
+      </div>
 
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-black text-white py-3 rounded-xl"
+        className="w-full mt-6 bg-black text-white py-3 rounded-xl"
       >
-        {saving ? "Saving..." : "Save Changes"}
+        {saving ? "Saving..." : "Create Product"}
       </button>
     </div>
   );
