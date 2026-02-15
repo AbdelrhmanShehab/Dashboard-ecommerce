@@ -224,6 +224,41 @@ export default function CreateProductPage() {
         value={form.price}
         onChange={e => setForm({ ...form, price: e.target.value })}
       />
+      {/* STATUS */}
+      <div className="mb-4">
+        <label className="block text-sm mb-2 font-medium">
+          Status
+        </label>
+
+        <select
+          value={form.status}
+          onChange={(e) =>
+            setForm({ ...form, status: e.target.value })
+          }
+          className="w-full border p-3 rounded"
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      {/* BEST SELLER */}
+      <button
+        type="button"
+        onClick={() =>
+          setForm(prev => ({
+            ...prev,
+            isBestSeller: !prev.isBestSeller,
+          }))
+        }
+        className={`px-4 py-4 mb-4 rounded-full text-sm ${form.isBestSeller
+          ? "bg-purple-300 text-white"
+          : "bg-gray-200 text-gray-600"
+          }`}
+      >
+        {form.isBestSeller ? "Best Seller ✓" : "Mark as Best Seller"}
+      </button>
+
 
       {/* COLORS */}
       <VariantInput

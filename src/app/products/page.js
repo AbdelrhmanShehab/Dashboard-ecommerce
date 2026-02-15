@@ -119,6 +119,8 @@ export default function ProductsPage() {
               <th className="p-4 text-left">Variants</th>
               <th className="p-4 text-left">Created</th>
               <th className="p-4 text-left">Actions</th>
+              <th className="p-4 text-left">Best Seller</th>
+
             </tr>
           </thead>
 
@@ -164,13 +166,12 @@ export default function ProductsPage() {
 
                   <td className="p-4">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        product.totalStock === 0
-                          ? "bg-red-100 text-red-700"
-                          : product.totalStock < 5
+                      className={`px-2 py-1 rounded-full text-xs ${product.totalStock === 0
+                        ? "bg-red-100 text-red-700"
+                        : product.totalStock < 5
                           ? "bg-yellow-100 text-yellow-700"
                           : "bg-green-100 text-green-700"
-                      }`}
+                        }`}
                     >
                       {product.totalStock} total
                     </span>
@@ -183,12 +184,21 @@ export default function ProductsPage() {
                   <td className="p-4">
                     {product.createdAt
                       ? format(
-                          product.createdAt.toDate(),
-                          "dd MMM yyyy"
-                        )
+                        product.createdAt.toDate(),
+                        "dd MMM yyyy"
+                      )
                       : "-"}
                   </td>
 
+                  <td className="p-4">
+                    {product.isBestSeller ? (
+                      <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
+                        ★ Best Seller
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
+                  </td>
                   <td className="p-4 space-x-3">
                     <button
                       onClick={() =>
@@ -208,6 +218,7 @@ export default function ProductsPage() {
                       Delete
                     </button>
                   </td>
+
                 </tr>
               ))}
           </tbody>

@@ -150,6 +150,40 @@ export default function EditProductPage() {
         placeholder="Price"
         className="w-full border p-3 rounded mb-4"
       />
+      {/* STATUS */}
+      <div className="mb-4">
+        <label className="block text-sm mb-2 font-medium">
+          Status
+        </label>
+
+        <select
+          value={form.status}
+          onChange={(e) =>
+            setForm({ ...form, status: e.target.value })
+          }
+          className="w-full border p-3 rounded"
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      {/* BEST SELLER */}
+      <div className="flex items-center gap-3 mb-6">
+        <input
+          type="checkbox"
+          id="isBestSeller"
+          checked={form.isBestSeller}
+          onChange={(e) =>
+            setForm({ ...form, isBestSeller: e.target.checked })
+          }
+          className="w-4 h-4"
+        />
+
+        <label htmlFor="isBestSeller" className="text-sm">
+          Mark as Best Seller
+        </label>
+      </div>
 
       <VariantTable
         variants={variants}

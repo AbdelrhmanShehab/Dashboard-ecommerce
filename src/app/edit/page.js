@@ -258,6 +258,23 @@ export default function EditProductPage() {
           className="border p-3 rounded"
         />
       </div>
+      {/* STATUS */}
+      <div className="mb-4">
+        <label className="block text-sm mb-2 font-medium">
+          Status
+        </label>
+
+        <select
+          value={form.status}
+          onChange={(e) =>
+            setForm({ ...form, status: e.target.value })
+          }
+          className="w-full border p-3 rounded"
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
 
       {/* IMAGES */}
       <div className="flex gap-3 flex-wrap mb-4">
