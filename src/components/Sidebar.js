@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const menuItems = [
-  { title: "Dashboard", icon: "home-icon.svg", href: "/" },
+  { title: "Dashboard", icon: "home-icon.svg", href: "/dashboard" },
   { title: "Users", icon: "user-icon.svg", href: "/users" },
   { title: "Products", icon: "product-icon.svg", href: "/products" },
   { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics" },
