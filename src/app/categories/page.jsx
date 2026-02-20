@@ -14,12 +14,9 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
 
 export default function Categories() {
-  const searchParams = useSearchParams();
-  const category = searchParams.get("category");
-  
+
   const { user } = useAuth();
   const router = useRouter();
 
@@ -32,14 +29,13 @@ export default function Categories() {
   const [editName, setEditName] = useState("");
   const [editImageFile, setEditImageFile] = useState(null);
 
-  if (!user) {
-    router.push("/login");
-    return null;
-  }
-
   useEffect(() => {
-  fetchProducts(category);
-}, [category]);
+    if (!user) {
+      router.push("/login");
+    }
+  }, [user, router]);
+
+  if (!user) return null;
 
   const categoriesRef = collection(db, "categories");
 
