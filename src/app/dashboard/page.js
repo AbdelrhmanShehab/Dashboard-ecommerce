@@ -10,7 +10,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 
+import RoleGuard from "../../components/RoleGuard";
+
 export default function DashboardPage() {
+  return (
+    <RoleGuard allowedRoles={["admin"]}>
+      <DashboardContent />
+    </RoleGuard>
+  );
+}
+
+function DashboardContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -101,7 +111,7 @@ export default function DashboardPage() {
   }).length ?? 0;
 
   return (
-    <main className="min-h-screen bg-[#f6f7fb] px-8 py-10">
+    <main className="min-h-screen bg-[#f6f7fb] px-8 py-10 dark:bg-[#1a1b23] dark:text-white">
       {/* HEADER */}
       <div className="mb-10 flex justify-between items-end">
         <div>
@@ -122,7 +132,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
 
         {/* RECENT PRODUCTS */}
-        <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full">
+        <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-xl font-bold text-gray-900">Recent Products</h2>
             <Link href="/products" className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full transition-colors">
@@ -155,7 +165,7 @@ export default function DashboardPage() {
               return (
                 <div
                   key={doc.id}
-                  className="group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer"
+                  className="group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer dark:hover:bg-gray-800 dark:hover:border-gray-700"
                   onClick={() => router.push(`/products`)}
                 >
                   <div className="relative w-12 h-12 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
@@ -172,11 +182,11 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-gray-900 truncate">{title}</p>
+                    <p className="font-bold text-sm text-gray-900 truncate dark:text-white">{title}</p>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{category}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-sm text-gray-900">{price} EGP</p>
+                    <p className="font-bold text-sm text-gray-900 dark:text-white">{price} EGP</p>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${stock > 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
                       }`}>
                       {stock > 0 ? `${stock} in stock` : "Out of stock"}
@@ -189,7 +199,7 @@ export default function DashboardPage() {
         </div>
 
         {/* RECENT ORDERS */}
-        <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full">
+        <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-xl font-bold text-gray-900">Recent Orders</h2>
             <Link href="/orders" className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-3 py-1.5 rounded-full transition-colors">
@@ -218,14 +228,14 @@ export default function DashboardPage() {
               return (
                 <div
                   key={doc.id}
-                  className="group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer"
+                  className="group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer dark:hover:bg-gray-800 dark:hover:border-gray-700"
                   onClick={() => router.push(`/orders`)}
                 >
                   <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 text-lg group-hover:bg-white transition-colors">
                     👤
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-gray-900 truncate">
+                    <p className="font-bold text-sm text-gray-900 truncate dark:text-white">
                       {data.delivery?.firstName} {data.delivery?.lastName}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -235,7 +245,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-sm text-gray-900">{data.totals?.total} EGP</p>
+                    <p className="font-bold text-sm text-gray-900 dark:text-white">{data.totals?.total} EGP</p>
                     <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${data.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                       data.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
                         data.status === 'cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'
@@ -257,9 +267,9 @@ export default function DashboardPage() {
 /* ---------------- REUSABLE CARD (memoized) ---------------- */
 const DashboardCard = memo(function DashboardCard({ title, value }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
-      <p className="text-sm text-gray-500 mb-2">{title}</p>
-      <h2 className="text-2xl font-semibold">{value}</h2>
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition dark:bg-[#1a1b23] dark:border-gray-800">
+      <p className="text-sm text-gray-500 mb-2 dark:text-gray-400">{title}</p>
+      <h2 className="text-2xl font-semibold dark:text-white">{value}</h2>
     </div>
   );
 });

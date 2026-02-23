@@ -15,7 +15,17 @@ import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
+import RoleGuard from "../../components/RoleGuard";
+
 export default function OrdersPage() {
+  return (
+    <RoleGuard allowedRoles={["admin", "editor"]}>
+      <OrdersContent />
+    </RoleGuard>
+  );
+}
+
+function OrdersContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -69,6 +79,38 @@ export default function OrdersPage() {
   const updateStatus = async (order, newStatus) => {
     if (order.status === newStatus) return;
 
+    // IF CANCELLED -> ANY (EXCEPT CANCELLED): DECREASE STOCK
+    if (order.status === "cancelled" && newStatus !== "cancelled") {
+      for (const item of order.items) {
+        const productRef = doc(db, "products", item.productId);
+        const productSnap = await getDoc(productRef);
+
+        if (!productSnap.exists()) continue;
+
+        const product = productSnap.data();
+        const variants = product.variants || [];
+
+        const updatedVariants = variants.map((v) => {
+          if (v.id === item.variantId) {
+            return {
+              ...v,
+              stock: Math.max(0, (v.stock || 0) - item.qty),
+            };
+          }
+          return v;
+        });
+
+        await updateDoc(productRef, {
+          variants: updatedVariants,
+          totalStock: updatedVariants.reduce(
+            (sum, v) => sum + (v.stock || 0),
+            0
+          ),
+        });
+      }
+    }
+
+    // IF ANY -> CANCELLED: INCREASE STOCK
     if (newStatus === "cancelled" && order.status !== "cancelled") {
       for (const item of order.items) {
         const productRef = doc(db, "products", item.productId);
@@ -111,21 +153,14 @@ export default function OrdersPage() {
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-    </div>
-  );
-
-  if (!user) return null;
 
   return (
-    <main className="p-4 md:p-8 bg-[#f9fafb] min-h-screen">
+    <main className="p-4 md:p-8 bg-[#f9fafb] min-h-screen dark:bg-[#1a1b23] dark:text-white">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-            <p className="text-gray-500 mt-1 text-sm">Manage and track your customer orders.</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Orders</h1>
+            <p className="text-gray-500 mt-1 text-sm dark:text-gray-400">Manage and track your customer orders.</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -135,7 +170,7 @@ export default function OrdersPage() {
                 placeholder="Search orders..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 w-64 shadow-sm transition-all"
+                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 w-64 shadow-sm transition-all dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               />
               <svg className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -145,7 +180,7 @@ export default function OrdersPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/5 shadow-sm transition-all outline-none"
+              className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/5 shadow-sm transition-all outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -157,10 +192,10 @@ export default function OrdersPage() {
           </div>
         </header>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden dark:bg-[#1a1b23] dark:border-gray-800">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
+              <tr className="bg-gray-50/50 border-b border-gray-100 dark:bg-gray-800 dark:border-gray-700">
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Order</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
@@ -190,23 +225,23 @@ export default function OrdersPage() {
                   <tr
                     key={order.id}
                     onClick={() => setSelectedOrder(order)}
-                    className="group hover:bg-gray-50/80 cursor-pointer transition-colors"
+                    className="group hover:bg-gray-50/80 cursor-pointer transition-colors dark:hover:bg-gray-800"
                   >
                     <td className="p-4">
                       <span className="font-medium text-gray-900 text-sm">#{order.id.slice(0, 6).toUpperCase()}</span>
                     </td>
                     <td className="p-4">
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {order.delivery?.firstName} {order.delivery?.lastName}
                         </span>
-                        <span className="text-xs text-gray-500">{order.customer?.email || order.delivery?.phone}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{order.customer?.email || order.delivery?.phone}</span>
                       </div>
                     </td>
                     <td className="p-4 text-sm text-gray-500">
                       {order.createdAt?.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
-                    <td className="p-4 text-sm font-semibold text-gray-900">
+                    <td className="p-4 text-sm font-semibold text-gray-900 dark:text-white">
                       {order.totals?.total?.toLocaleString()} EGP
                     </td>
                     <td className="p-4 text-center">
@@ -236,9 +271,9 @@ function StatusBadge({ status }) {
   const colors = {
     pending: "bg-amber-50 text-amber-700 border-amber-100",
     confirmed: "bg-blue-50 text-blue-700 border-blue-100",
-    shipped: "bg-indigo-50 text-indigo-700 border-indigo-100",
-    delivered: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    cancelled: "bg-rose-50 text-rose-700 border-rose-100",
+    shipped: "bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900 dark:text-indigo-200 dark:border-indigo-800",
+    delivered: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900 dark:text-emerald-200 dark:border-emerald-800",
+    cancelled: "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900 dark:text-rose-200 dark:border-rose-800",
   };
 
   return (
@@ -260,15 +295,15 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[95vh] flex flex-col">
+      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[95vh] flex flex-col dark:bg-[#1a1b23] dark:border dark:border-gray-800">
 
         {/* MODAL HEADER */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800 dark:border-gray-700">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
-            <p className="text-xs text-gray-500 font-mono">ID: {order.id}</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Order Details</h2>
+            <p className="text-xs text-gray-500 font-mono dark:text-gray-400">ID: {order.id}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-gray-200">
+          <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-gray-200 dark:hover:bg-gray-700 dark:hover:border-gray-600">
             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -290,7 +325,7 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
                     }`}>
                     {step.icon}
                   </div>
-                  <span className={`text-[10px] sm:text-xs font-bold mt-2 uppercase tracking-tight ${idx <= currentStepIndex ? "text-gray-900" : "text-gray-300"}`}>
+                  <span className={`text-[10px] sm:text-xs font-bold mt-2 uppercase tracking-tight ${idx <= currentStepIndex ? "text-gray-900 dark:text-white" : "text-gray-300 dark:text-gray-700"}`}>
                     {step.label}
                   </span>
                 </div>
@@ -303,17 +338,17 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
             <div className="space-y-8">
               <section>
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Customer info</h3>
-                <div className="p-4 bg-gray-50 rounded-xl space-y-1">
-                  <p className="font-semibold text-gray-900">{order.delivery.firstName} {order.delivery.lastName}</p>
-                  <p className="text-sm text-gray-600">{order.delivery.phone}</p>
-                  <p className="text-sm text-gray-600">{order.customer.email}</p>
+                <div className="p-4 bg-gray-50 rounded-xl space-y-1 dark:bg-gray-800/50">
+                  <p className="font-semibold text-gray-900 dark:text-white">{order.delivery.firstName} {order.delivery.lastName}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{order.delivery.phone}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{order.customer.email}</p>
                 </div>
               </section>
 
               <section>
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Delivery address</h3>
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm text-gray-800 leading-relaxed">
+                <div className="p-4 bg-gray-50 rounded-xl dark:bg-gray-800/50">
+                  <p className="text-sm text-gray-800 leading-relaxed dark:text-gray-300">
                     {order.delivery.address}<br />
                     {order.delivery.city}, {order.delivery.government}
                   </p>
@@ -322,32 +357,32 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
 
               <section>
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Quick actions</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => updateStatus(order, "confirmed")}
                     disabled={order.status === "confirmed" || order.status === "cancelled" || order.status === "delivered" || order.status === "shipped"}
-                    className="flex-1 px-4 py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed dark:bg-indigo-600 dark:hover:bg-indigo-700 h-10 min-w-[120px]"
                   >
                     Confirm Order
                   </button>
                   <button
                     onClick={() => updateStatus(order, "shipped")}
                     disabled={order.status === "shipped" || order.status === "cancelled" || order.status === "delivered" || order.status === "pending"}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed h-10 min-w-[120px]"
                   >
                     Mark Shipped
                   </button>
                   <button
                     onClick={() => updateStatus(order, "delivered")}
                     disabled={order.status === "delivered" || order.status === "cancelled" || order.status === "pending" || order.status === "confirmed"}
-                    className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer h-10 min-w-[120px]"
                   >
                     Mark Delivered
                   </button>
                   <button
                     onClick={() => updateStatus(order, "cancelled")}
                     disabled={order.status === "cancelled" || order.status === "delivered"}
-                    className="flex-1 px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed h-10 min-w-[120px] dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-900/20"
                   >
                     Cancel Order
                   </button>
@@ -358,10 +393,10 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
             {/* RIGHT COLUMN: ITEMS */}
             <div>
               <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Order items</h3>
-              <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-50">
+              <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-50 dark:border-gray-800 dark:divide-gray-800">
                 {order.items.map((item, i) => (
-                  <div key={i} className="p-4 flex items-center gap-4 bg-white hover:bg-gray-50/50 transition-colors">
-                    <div className="relative w-14 h-14 bg-gray-50 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100">
+                  <div key={i} className="p-4 flex items-center gap-4 bg-white hover:bg-gray-50/50 transition-colors dark:bg-[#1a1b23] dark:hover:bg-gray-800">
+                    <div className="relative w-14 h-14 bg-gray-50 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
                       {item.image || (item.images && item.images[0]) ? (
                         <Image
                           src={item.image || item.images[0]}
@@ -377,12 +412,12 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{item.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{item.variant}</p>
+                      <p className="text-sm font-bold text-gray-900 truncate dark:text-white">{item.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">{item.variant}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-bold text-gray-900">x{item.qty}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{(item.price * item.qty).toLocaleString()} EGP</p>
+                      <p className="text-xs font-bold text-gray-900 dark:text-white">x{item.qty}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 dark:text-gray-500">{(item.price * item.qty).toLocaleString()} EGP</p>
                     </div>
                   </div>
                 ))}
@@ -390,17 +425,17 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
 
               {/* TOTALS TABLE */}
               <div className="mt-6 pt-4 border-t-2 border-dashed border-gray-100 space-y-3">
-                <div className="flex justify-between text-sm text-gray-500">
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                   <span>Subtotal</span>
-                  <span className="font-medium text-gray-900">{order.totals.subtotal.toLocaleString()} EGP</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{order.totals.subtotal.toLocaleString()} EGP</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-500">
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                   <span>Shipping</span>
-                  <span className="font-medium text-gray-900">{order.totals.shipping.toLocaleString()} EGP</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{order.totals.shipping.toLocaleString()} EGP</span>
                 </div>
-                <div className="flex justify-between text-base font-black pt-3 text-gray-900 border-t border-gray-50">
+                <div className="flex justify-between text-base font-black pt-3 text-gray-900 border-t border-gray-50 dark:text-white dark:border-gray-800">
                   <span>Grand Total</span>
-                  <span className="text-emerald-600">{order.totals.total.toLocaleString()} EGP</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">{order.totals.total.toLocaleString()} EGP</span>
                 </div>
               </div>
             </div>
@@ -408,10 +443,10 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
         </div>
 
         {/* MODAL FOOTER */}
-        <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+        <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex justify-end dark:bg-gray-800/50 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="px-8 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+            className="px-8 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
           >
             Done
           </button>

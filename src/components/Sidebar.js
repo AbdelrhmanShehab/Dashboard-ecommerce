@@ -4,24 +4,28 @@ import React, { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 
 const menuItems = [
-  { title: "Dashboard", icon: "home-icon.svg", href: "/dashboard" },
-  { title: "Users", icon: "user-icon.svg", href: "/users" },
-  { title: "Products", icon: "product-icon.svg", href: "/products" },
-  { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics" },
-  { title: "Categories", icon: "settings-icon.svg", href: "/categories" },
-  { title: "Orders", icon: "settings-icon.svg", href: "/orders" },
+  { title: "Dashboard", icon: "home-icon.svg", href: "/dashboard", roles: ["admin"] },
+  { title: "Users", icon: "user-icon.svg", href: "/users", roles: ["admin"] },
+  { title: "Products", icon: "product-icon.svg", href: "/products", roles: ["admin", "editor"] },
+  { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics", roles: ["admin"] },
+  { title: "Categories", icon: "settings-icon.svg", href: "/categories", roles: ["admin", "editor"] },
+  { title: "Orders", icon: "settings-icon.svg", href: "/orders", roles: ["admin", "editor"] },
 ];
 
 const Sidebar = memo(function Sidebar({ visible, onClose }) {
   const pathname = usePathname();
+  const { role } = useAuth();
 
   const handleClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       onClose?.();
     }
   };
+
+  const filteredItems = menuItems.filter(item => !item.roles || item.roles.includes(role));
 
   return (
     <aside
@@ -35,7 +39,7 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
       <nav>
         <h1 className="px-4 py-6 text-xl font-semibold">Dashboard</h1>
         <ul className="list-none p-0 m-0">
-          {menuItems.map((item) => {
+          {filteredItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <li key={item.title} className="mb-2 dark:text-white">

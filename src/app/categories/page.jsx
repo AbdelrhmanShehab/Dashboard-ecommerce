@@ -15,8 +15,17 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 
-export default function Categories() {
+import RoleGuard from "../../components/RoleGuard";
 
+export default function Categories() {
+  return (
+    <RoleGuard allowedRoles={["admin", "editor"]}>
+      <CategoriesContent />
+    </RoleGuard>
+  );
+}
+
+function CategoriesContent() {
   const { user } = useAuth();
   const router = useRouter();
 
@@ -29,13 +38,6 @@ export default function Categories() {
   const [editName, setEditName] = useState("");
   const [editImageFile, setEditImageFile] = useState(null);
 
-  useEffect(() => {
-    if (!user) {
-      router.push("/login");
-    }
-  }, [user, router]);
-
-  if (!user) return null;
 
   const categoriesRef = collection(db, "categories");
 
@@ -130,16 +132,16 @@ export default function Categories() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-8 max-w-5xl mx-auto dark:text-white">
       <h1 className="text-2xl font-bold mb-6">Categories</h1>
 
       {/* ADD CATEGORY */}
-      <div className="bg-white p-4 rounded-xl shadow mb-8 flex gap-3 items-center">
+      <div className="bg-white p-4 rounded-xl shadow mb-8 flex gap-3 items-center dark:bg-gray-800 dark:border dark:border-gray-700">
         <input
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Category name"
-          className="border px-3 py-2 rounded w-full"
+          className="border px-3 py-2 rounded w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
 
         <input
@@ -162,10 +164,10 @@ export default function Categories() {
         {categories.map(cat => (
           <div
             key={cat.id}
-            className="border rounded-xl p-4 flex gap-4 items-center"
+            className="border rounded-xl p-4 flex gap-4 items-center bg-white dark:bg-gray-800 dark:border-gray-700"
           >
             {/* IMAGE */}
-            <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+            <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0 dark:bg-gray-700">
               {cat.image && (
                 <img
                   src={cat.image}
@@ -195,8 +197,8 @@ export default function Categories() {
                 </>
               ) : (
                 <>
-                  <p className="font-medium">{cat.name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-gray-900 dark:text-white">{cat.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {cat.slug}
                   </p>
                 </>

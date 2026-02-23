@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, query, limit } from "firebase/firestore";
+import { collection, query, limit, orderBy } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import {
   Chart as ChartJS,
@@ -28,157 +28,214 @@ ChartJS.register(
   BarElement
 );
 
+import RoleGuard from "../../components/RoleGuard";
+
+import AnalyticsCard from "../../components/AnalyticsCard";
+
 export default function AnalyticsPage() {
+  return (
+    <RoleGuard allowedRoles={["admin"]}>
+      <AnalyticsContent />
+    </RoleGuard>
+  );
+}
+
+function AnalyticsContent() {
   const { user } = useAuth();
   const router = useRouter();
 
-  /* ---------------- AUTH GUARD ---------------- */
-  useEffect(() => {
-    if (user === null) router.push("/login");
-  }, [user, router]);
+  /* ---------------- FIRESTORE QUERIES ---------------- */
+  const [usersSnap, usersLoading] = useCollection(query(collection(db, "users"), limit(500)));
+  const [productsSnap, productsLoading] = useCollection(query(collection(db, "products"), limit(500)));
+  const [ordersSnap, ordersLoading] = useCollection(query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(500)));
 
-  /* ---------------- FIRESTORE: limited queries ---------------- */
-  const usersQuery = query(collection(db, "users"), limit(500));
-  const productsQuery = query(collection(db, "products"), limit(500));
+  const loading = usersLoading || productsLoading || ordersLoading;
 
-  const [value, loading, error] = useCollection(usersQuery);
-  const [productValue, productLoading] = useCollection(productsQuery);
+  /* ---------------- CALCULATIONS (Memoized) ---------------- */
+  const metrics = useMemo(() => {
+    if (!usersSnap || !productsSnap || !ordersSnap) return null;
 
-  /* ---------------- MEMOIZED: users data + calculations ---------------- */
-  const { users, activeCount, inactiveCount, adminUsers, regularUsers } = useMemo(() => {
-    const users = value?.docs.map((doc) => ({ id: doc.id, ...doc.data() })) || [];
-    const activeCount = users.filter((u) => u.Status === "active").length;
-    const inactiveCount = users.filter((u) => u.Status !== "active").length;
-    const adminUsers = users.filter((u) => u.Role === "Admin" || u.Role === "admin").length;
-    const regularUsers = users.filter((u) => u.Role !== "Admin" && u.Role !== "admin").length;
-    return { users, activeCount, inactiveCount, adminUsers, regularUsers };
-  }, [value]);
+    const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const products = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const orders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  /* ---------------- MEMOIZED: products data + calculations ---------------- */
-  const {
-    products,
-    totalElectricCategory,
-    totalFurnitureCategory,
-    totalAccessoriesCategory,
-    revnueElecCategory,
-    revnueFurnCategory,
-    revnueAccesCategory,
-    totalElectricCategoryStock,
-    totalFurnitureCategoryStock,
-    totalAccessoriesCategoryStock,
-  } = useMemo(() => {
-    const products = productValue?.docs.map((doc) => ({ id: doc.id, ...doc.data() })) || [];
+    // Financials
+    const totalRevenue = orders
+      .filter(o => o.status !== "cancelled")
+      .reduce((sum, o) => sum + (o.totals?.total || 0), 0);
+    
+    const aov = orders.length ? totalRevenue / orders.length : 0;
 
-    const totalElectricCategory = products.filter((p) => p.Category?.toLowerCase() === "electronics").length;
-    const totalFurnitureCategory = products.filter((p) => p.Category?.toLowerCase() === "furniture").length;
-    const totalAccessoriesCategory = products.filter((p) => p.Category?.toLowerCase() === "accessories").length;
+    // Users
+    const activeUsers = users.filter(u => u.status === "active").length;
+    const adminCount = users.filter(u => u.role === "admin").length;
 
-    const revnueElecCategory = products.reduce((a, p) =>
-      a + (p.Category?.toLowerCase() === "electronics" ? Number(p.Price) * Number(p.Stock) : 0), 0);
-    const revnueFurnCategory = products.reduce((a, p) =>
-      a + (p.Category?.toLowerCase() === "furniture" ? Number(p.Price) * Number(p.Stock) : 0), 0);
-    const revnueAccesCategory = products.reduce((a, p) =>
-      a + (p.Category?.toLowerCase() === "accessories" ? Number(p.Price) * Number(p.Stock) : 0), 0);
+    // Products & Stock
+    const totalStock = products.reduce((sum, p) => sum + (p.totalStock || 0), 0);
+    const lowStockItems = products.filter(p => p.totalStock > 0 && p.totalStock < 5).length;
 
-    const totalElectricCategoryStock = products.reduce((a, p) =>
-      a + (p.Category?.toLowerCase() === "electronics" ? Number(p.Stock) : 0), 0);
-    const totalFurnitureCategoryStock = products.reduce((a, p) =>
-      a + (p.Category?.toLowerCase() === "furniture" ? Number(p.Stock) : 0), 0);
-    const totalAccessoriesCategoryStock = products.reduce((a, p) =>
-      a + (p.Category?.toLowerCase() === "accessories" ? Number(p.Stock) : 0), 0);
+    // Order Statuses
+    const statusCounts = orders.reduce((acc, o) => {
+      acc[o.status] = (acc[o.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Sales by Category (Actual sales from orders)
+    const categorySales = orders.reduce((acc, o) => {
+      o.items?.forEach(item => {
+        const cat = item.category || "Uncategorized";
+        acc[cat] = (acc[cat] || 0) + (item.price * item.qty);
+      });
+      return acc;
+    }, {});
 
     return {
-      products,
-      totalElectricCategory,
-      totalFurnitureCategory,
-      totalAccessoriesCategory,
-      revnueElecCategory,
-      revnueFurnCategory,
-      revnueAccesCategory,
-      totalElectricCategoryStock,
-      totalFurnitureCategoryStock,
-      totalAccessoriesCategoryStock,
+      totalRevenue,
+      aov,
+      totalOrders: orders.length,
+      activeUsers,
+      adminCount,
+      totalStock,
+      lowStockItems,
+      statusCounts,
+      categorySales,
+      users,
+      orders
     };
-  }, [productValue]);
+  }, [usersSnap, productsSnap, ordersSnap]);
 
-  /* ---------------- MEMOIZED: chart data objects ---------------- */
-  const pieDataActivity = useMemo(() => ({
-    labels: ["Active Users", "Inactive Users"],
-    datasets: [{ data: [activeCount, inactiveCount], backgroundColor: ["#064232", "#568F87"], hoverBackgroundColor: ["#064950", "#064950"] }],
-  }), [activeCount, inactiveCount]);
+  /* ---------------- CHART DATA ---------------- */
+  const orderStatusData = useMemo(() => {
+    if (!metrics) return null;
+    const labels = Object.keys(metrics.statusCounts);
+    const data = Object.values(metrics.statusCounts);
+    return {
+      labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+      datasets: [{
+        data,
+        backgroundColor: ["#fbbf24", "#3b82f6", "#6366f1", "#10b981", "#ef4444"],
+        borderWidth: 0,
+      }]
+    };
+  }, [metrics]);
 
-  const pieDataAuth = useMemo(() => ({
-    labels: ["Admin Users", "Regular Users"],
-    datasets: [{ data: [adminUsers, regularUsers], backgroundColor: ["#3b82f6", "#F5BABB"], hoverBackgroundColor: ["#064950", "#F5BA8B"] }],
-  }), [adminUsers, regularUsers]);
+  const categorySalesData = useMemo(() => {
+    if (!metrics) return null;
+    return {
+      labels: Object.keys(metrics.categorySales),
+      datasets: [{
+        label: "Revenue (EGP)",
+        data: Object.values(metrics.categorySales),
+        backgroundColor: "#6366f1",
+        borderRadius: 8,
+      }]
+    };
+  }, [metrics]);
 
-  const productCountData = useMemo(() => ({
-    labels: ["Electronics", "Furniture", "Accessories"],
-    datasets: [{ label: "Products", data: [totalElectricCategory, totalFurnitureCategory, totalAccessoriesCategory], backgroundColor: ["#064232", "#568F87", "#B5E5CF"], hoverBackgroundColor: ["#046C4E", "#357E73", "#94D8BB"] }],
-  }), [totalElectricCategory, totalFurnitureCategory, totalAccessoriesCategory]);
-
-  const stockData = useMemo(() => ({
-    labels: ["Electronics", "Furniture", "Accessories"],
-    datasets: [{ label: "Stock", data: [totalElectricCategoryStock, totalFurnitureCategoryStock, totalAccessoriesCategoryStock], backgroundColor: ["#FFB703", "#FB8500", "#8ECAE6"], hoverBackgroundColor: ["#FFA500", "#E06A00", "#62B5D9"] }],
-  }), [totalElectricCategoryStock, totalFurnitureCategoryStock, totalAccessoriesCategoryStock]);
-
-  const revenueData = useMemo(() => ({
-    labels: ["Electronics", "Furniture", "Accessories"],
-    datasets: [{ label: "Revenue ($)", data: [revnueElecCategory, revnueFurnCategory, revnueAccesCategory], backgroundColor: ["#023047", "#219EBC", "#FFB703"] }],
-  }), [revnueElecCategory, revnueFurnCategory, revnueAccesCategory]);
-
-  if (user === null) return null;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center dark:bg-[#1a1b23]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <p className="text-gray-500 dark:text-gray-400 font-medium">Preparing insights...</p>
+      </div>
+    </div>
+  );
 
   return (
-    <main className="container">
-      <TitlePage header="Users Analytics" paragraph="Manage your users by analyzing their data." />
+    <main className="p-8 bg-[#f9fafb] min-h-screen dark:bg-[#1a1b23] dark:text-white transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-10">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
+            <span className="p-2 bg-indigo-600 rounded-xl text-white">📊</span>
+            Professional Analytics
+          </h1>
+          <p className="text-gray-500 mt-2 text-sm dark:text-gray-400">Comprehensive overview of your store's performance and growth.</p>
+        </header>
 
-      {loading && (
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 bg-gray-100 rounded-lg animate-pulse" />
-          ))}
+        {/* KPI CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <AnalyticsCard 
+            title="Total Revenue" 
+            value={`${metrics?.totalRevenue.toLocaleString()} EGP`} 
+            color="emerald" 
+            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            trend="up"
+            trendValue="12.5%"
+          />
+          <AnalyticsCard 
+            title="Average Order" 
+            value={`${Math.round(metrics?.aov || 0).toLocaleString()} EGP`} 
+            color="indigo" 
+            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>}
+          />
+          <AnalyticsCard 
+            title="Active Users" 
+            value={metrics?.activeUsers} 
+            color="blue" 
+            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
+          />
+          <AnalyticsCard 
+            title="Low Stock" 
+            value={metrics?.lowStockItems} 
+            color="rose" 
+            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>}
+          />
         </div>
-      )}
 
-      {error && <p className="text-red-500">Error: {error.message}</p>}
-
-      {!loading && users.length > 0 && (
-        <div className="max-w-sm h-[300px] flex flex-col md:flex-row justify-around w-[100%] mt-12 gap-20 mb-16">
-          <Pie data={pieDataActivity} />
-          <Pie data={pieDataAuth} />
-          <LineChart users={users} />
-        </div>
-      )}
-
-      <TitlePage header="Products Analytics" paragraph="Manage your products by analyzing their data." />
-
-      {!loading && users.length === 0 && <p>No user data found.</p>}
-
-      {productLoading && (
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 bg-gray-100 rounded-lg animate-pulse" />
-          ))}
-        </div>
-      )}
-
-      {!productLoading && (
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div className="p-4 rounded-lg shadow dark:text-white">
-            <h2 className="text-lg font-bold mb-4">Products per Category</h2>
-            <Pie data={productCountData} />
+        {/* CHARTS GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+          
+          {/* REVENUE BY CATEGORY */}
+          <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 dark:bg-[#1a1b23] dark:border-gray-800">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Revenue by Category</h3>
+            <div className="h-80">
+              {categorySalesData && <Bar data={categorySalesData} options={{ maintainAspectRatio: false }} />}
+            </div>
           </div>
-          <div className="p-4 rounded-lg shadow dark:text-white">
-            <h2 className="text-lg font-bold mb-4">Stock Distribution</h2>
-            <Pie data={stockData} />
+
+          {/* ORDER STATUS */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 dark:bg-[#1a1b23] dark:border-gray-800">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Order Success Rate</h3>
+            <div className="h-80 flex items-center justify-center">
+              {orderStatusData && <Pie data={orderStatusData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />}
+            </div>
           </div>
-          <div className="p-4 rounded-lg shadow dark:text-white col-span-1 md:col-span-2 lg:col-span-1">
-            <h2 className="text-lg font-bold mb-4">Revenue by Category</h2>
-            <Bar data={revenueData} />
+
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+           {/* USER GROWTH */}
+           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 dark:bg-[#1a1b23] dark:border-gray-800">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">User Acquisition</h3>
+            <div className="w-full">
+               <LineChart users={metrics?.users} />
+            </div>
+          </div>
+
+          {/* RECENT ACITIVITY SUMMARY */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 dark:bg-[#1a1b23] dark:border-gray-800">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Key Performance Highlights</h3>
+            <ul className="space-y-4">
+              <li className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl dark:bg-gray-800/50">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Orders Fulfilled</span>
+                <span className="font-bold text-indigo-600 dark:text-indigo-400">{metrics?.statusCounts.delivered || 0}</span>
+              </li>
+              <li className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl dark:bg-gray-800/50">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Cancellation Rate</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400">
+                  {Math.round(((metrics?.statusCounts.cancelled || 0) / (metrics?.totalOrders || 1)) * 100)}%
+                </span>
+              </li>
+              <li className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl dark:bg-gray-800/50">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Admin-to-User Ratio</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  1:{Math.round(metrics?.activeUsers / (metrics?.adminCount || 1))}
+                </span>
+              </li>
+            </ul>
           </div>
         </div>
-      )}
+      </div>
     </main>
   );
 }

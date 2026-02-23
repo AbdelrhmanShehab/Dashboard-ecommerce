@@ -9,6 +9,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler
 } from "chart.js";
 
 ChartJS.register(
@@ -18,7 +19,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 export default function LineChart({ users = [] }) {
@@ -26,8 +28,9 @@ export default function LineChart({ users = [] }) {
   const monthlyCounts = {};
 
   users.forEach((user) => {
-    if (user.Created && user.Created.toDate) {
-      const date = user.Created.toDate();
+    const dateField = user.createdAt || user.Created;
+    if (dateField && dateField.toDate) {
+      const date = dateField.toDate();
       const monthYear = date.toLocaleString("default", {
         month: "short",
         year: "numeric",
@@ -43,20 +46,59 @@ export default function LineChart({ users = [] }) {
       {
         label: "New Users",
         data: Object.values(monthlyCounts),
-        fill: false,
+        fill: true,
         borderColor: "#6366f1",
-        backgroundColor: "#6366f1",
-        tension: 0.3,
+        backgroundColor: "rgba(99, 102, 241, 0.1)",
+        borderWidth: 3,
+        pointBackgroundColor: "#6366f1",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.4,
       },
     ],
   };
 
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "#1a1b23",
+        titleColor: "#fff",
+        bodyColor: "#fff",
+        padding: 12,
+        cornerRadius: 12,
+        displayColors: false,
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          display: true,
+          color: "rgba(0,0,0,0.05)",
+          drawBorder: false,
+        },
+        ticks: {
+          stepSize: 1,
+        }
+      },
+      x: {
+        grid: {
+          display: false,
+        }
+      }
+    }
+  };
+
   return (
-    <div className="bg-white dark:bg-[#0D1321] p-4 rounded-md shadow-md w-[300px]">
-      <h2 className="text-lg font-semibold mb-4 dark:text-white">
-        📈 User Growth
-      </h2>
-      <Line data={data} />
+    <div className="h-[300px] w-full">
+      <Line data={data} options={options} />
     </div>
   );
 }

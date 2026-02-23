@@ -8,7 +8,17 @@ import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
 import VariantInput from "../../components/VariantInput";
 import VariantTable from "../../components/VariantTable";
+import RoleGuard from "../../components/RoleGuard";
+
 export default function CreateProductPage() {
+  return (
+    <RoleGuard allowedRoles={["admin"]}>
+      <CreateProductContent />
+    </RoleGuard>
+  );
+}
+
+function CreateProductContent() {
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);

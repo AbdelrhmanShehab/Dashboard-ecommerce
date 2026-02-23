@@ -43,7 +43,7 @@ const ProductCard = memo(function ProductCard() {
     return <div className="p-6 text-red-500">Error: {error.message}</div>;
 
   return (
-    <div className="bg-white rounded-xl shadow p-6 mt-10 w-full dark:bg-[#0b1120] text-white">
+    <div className="bg-white rounded-xl shadow p-6 mt-10 w-full dark:bg-[#1a1b23] dark:text-white">
       <TitlePage header="Recent Products" paragraph="Latest products added." />
       <ul className="space-y-4">
         {products.map((product) => (

@@ -13,7 +13,17 @@ import sortIcon from "../../../public/icons/sort-icon.svg";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 
+import RoleGuard from "../../components/RoleGuard";
+
 export default function UserPage() {
+  return (
+    <RoleGuard allowedRoles={["admin"]}>
+      <UserContent />
+    </RoleGuard>
+  );
+}
+
+function UserContent() {
   const { user } = useAuth();
   const router = useRouter();
   const [sortField, setSortField] = useState("email");
@@ -120,7 +130,7 @@ export default function UserPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="text-center dark:bg-[#0D1321]">
+            <tbody className="text-center dark:bg-[#1a1b23]">
               {loading && (
                 <tr>
                   <td colSpan={5} className="p-4">
@@ -146,8 +156,8 @@ export default function UserPage() {
                     <span
                       className={`inline-block px-2 py-1 rounded-lg text-xs ${
                         user.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                       }`}
                     >
                       {user.status}

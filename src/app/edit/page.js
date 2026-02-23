@@ -14,7 +14,17 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import imageCompression from "browser-image-compression";
 
+import RoleGuard from "../../components/RoleGuard";
+
 export default function EditProductPage() {
+  return (
+    <RoleGuard allowedRoles={["admin"]}>
+      <EditProductContent />
+    </RoleGuard>
+  );
+}
+
+function EditProductContent() {
   const params = useParams();
   const id = Array.isArray(params?.id)
     ? params.id[0]

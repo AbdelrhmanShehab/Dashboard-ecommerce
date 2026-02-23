@@ -45,7 +45,7 @@ const UserCard = () => {
     .slice(0, 3); // get latest 3 users
 
   return (
-    <div className="bg-white rounded-xl shadow p-6 mt-10 w-full dark:bg-[#0D1321] text-white">
+    <div className="bg-white rounded-xl shadow p-6 mt-10 w-full dark:bg-[#1a1b23] dark:text-white">
       <TitlePage header="Recent Users" paragraph="Latest user registrations." />
 
       <ul className="space-y-4">

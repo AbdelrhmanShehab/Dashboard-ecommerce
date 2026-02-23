@@ -5,7 +5,17 @@ import { auth, db } from "../../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
+import RoleGuard from "../../components/RoleGuard";
+
 export default function CreateUserPage() {
+  return (
+    <RoleGuard allowedRoles={["admin"]}>
+      <CreateUserContent />
+    </RoleGuard>
+  );
+}
+
+function CreateUserContent() {
   const [form, setForm] = useState({
     name: "",
     email: "",

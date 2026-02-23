@@ -1,7 +1,7 @@
 // components/StatusCard.js
 const StatusCard = ({ title, value, secondaryValue, iconSrc, trend }) => {
   return (
-    <div className="bg-white rounded-lg shadow w-full p-4 flex flex-col dark:text-[#1a1b23] dark:bg-[#0D1321]">
+    <div className="bg-white rounded-lg shadow w-full p-4 flex flex-col dark:text-white dark:bg-[#1a1b23]">
       <div className="flex justify-between items-start">
         <h3 className="text-gray-500 text-sm font-medium dark:text-white">{title}</h3>
         {iconSrc && (
