@@ -357,24 +357,24 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
 
               <section>
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Quick actions</h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                   <button
                     onClick={() => updateStatus(order, "confirmed")}
-                    disabled={order.status === "confirmed" || order.status === "cancelled" || order.status === "delivered" || order.status === "shipped"}
+                    disabled={order.status !== "pending"}
                     className="px-4 py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed dark:bg-indigo-600 dark:hover:bg-indigo-700 h-10 min-w-[120px]"
                   >
                     Confirm Order
                   </button>
                   <button
                     onClick={() => updateStatus(order, "shipped")}
-                    disabled={order.status === "shipped" || order.status === "cancelled" || order.status === "delivered" || order.status === "pending"}
+                    disabled={order.status !== "confirmed"}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed h-10 min-w-[120px]"
                   >
                     Mark Shipped
                   </button>
                   <button
                     onClick={() => updateStatus(order, "delivered")}
-                    disabled={order.status === "delivered" || order.status === "cancelled" || order.status === "pending" || order.status === "confirmed"}
+                    disabled={order.status !== "shipped"}
                     className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer h-10 min-w-[120px]"
                   >
                     Mark Delivered
