@@ -14,6 +14,7 @@ import { useCollection } from "react-firebase-hooks/firestore";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useCallback } from "react";
 
 import RoleGuard from "../../components/RoleGuard";
 
@@ -153,6 +154,21 @@ function OrdersContent() {
     }
   };
 
+  /* CONFIRM PAYMENT */
+  const confirmPayment = async (order) => {
+    const orderRef = doc(db, "orders", order.id);
+    await updateDoc(orderRef, {
+      "payment.paid": true,
+      updatedAt: new Date(),
+    });
+    if (selectedOrder?.id === order.id) {
+      setSelectedOrder({
+        ...order,
+        payment: { ...order.payment, paid: true },
+      });
+    }
+  };
+
 
   return (
     <main className="p-4 md:p-8 bg-[#f9fafb] min-h-screen dark:bg-[#1a1b23] dark:text-white">
@@ -261,6 +277,7 @@ function OrdersContent() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           updateStatus={updateStatus}
+          confirmPayment={confirmPayment}
         />
       )}
     </main>
@@ -283,7 +300,19 @@ function StatusBadge({ status }) {
   );
 }
 
-function OrderDetailsModal({ order, onClose, updateStatus }) {
+function OrderDetailsModal({ order, onClose, updateStatus, confirmPayment }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+
+  const handleConfirmPayment = async () => {
+    setConfirmingPayment(true);
+    try {
+      await confirmPayment(order);
+    } finally {
+      setConfirmingPayment(false);
+    }
+  };
+
   const timelineSteps = [
     { id: "pending", label: "Pending", icon: "🕒" },
     { id: "confirmed", label: "Confirmed", icon: "📄" },
@@ -292,6 +321,10 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
   ];
 
   const currentStepIndex = timelineSteps.findIndex(s => s.id === order.status);
+
+  const payment = order.payment || {};
+  const hasScreenshot = !!payment.paymentPhotoUrl;
+  const isOnline = payment.method === "online";
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
@@ -438,6 +471,108 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
                   <span className="text-emerald-600 dark:text-emerald-400">{order.totals.total.toLocaleString()} EGP</span>
                 </div>
               </div>
+
+              {/* ── PAYMENT INFO CARD ── */}
+              <div className="mt-8">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Payment</h3>
+                <div className={`rounded-xl border-2 p-4 space-y-4 ${
+                  payment.paid
+                    ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-800/60 dark:bg-emerald-900/20"
+                    : "border-amber-200 bg-amber-50/60 dark:border-amber-800/60 dark:bg-amber-900/20"
+                }`}>
+
+                  {/* Method + Status row */}
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg ${ isOnline ? "" : "" }`}>
+                        {isOnline ? "💳" : "💵"}
+                      </span>
+                      <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">
+                        {isOnline ? "Online Payment (Instapay)" : "Cash on Delivery"}
+                      </span>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
+                      payment.paid
+                        ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700"
+                        : "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700"
+                    }`}>
+                      {payment.paid ? "✓ Paid" : "Pending"}
+                    </span>
+                  </div>
+
+                  {/* Deposit / Amount row */}
+                  {payment.depositAmount != null && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {payment.depositType === "deposit" ? "Deposit (10%)" : "Amount"}
+                      </span>
+                      <span className="font-bold text-gray-900 dark:text-white">
+                        {payment.depositAmount.toLocaleString()} EGP
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Screenshot */}
+                  {hasScreenshot && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Instapay Receipt</p>
+                      <div
+                        className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 cursor-zoom-in group"
+                        onClick={() => setLightboxOpen(true)}
+                      >
+                        <Image
+                          src={payment.paymentPhotoUrl}
+                          alt="Instapay receipt"
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="(max-width: 768px) 100vw, 400px"
+                          unoptimized
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-xs bg-black/60 px-3 py-1.5 rounded-full">
+                            🔍 Click to enlarge
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No screenshot notice */}
+                  {!hasScreenshot && isOnline && (
+                    <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 rounded-lg px-3 py-2">
+                      <span>⚠️</span>
+                      <span>No payment screenshot uploaded yet.</span>
+                    </div>
+                  )}
+
+                  {/* Confirm Payment button */}
+                  {!payment.paid && hasScreenshot && (
+                    <button
+                      onClick={handleConfirmPayment}
+                      disabled={confirmingPayment}
+                      className="w-full mt-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2"
+                    >
+                      {confirmingPayment ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                          </svg>
+                          Confirming...
+                        </>
+                      ) : (
+                        <>✅ Confirm Payment</>
+                      )}
+                    </button>
+                  )}
+
+                  {payment.paid && (
+                    <p className="text-xs text-center text-emerald-700 dark:text-emerald-400 font-semibold">
+                      ✓ Payment has been verified
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -452,6 +587,39 @@ function OrderDetailsModal({ order, onClose, updateStatus }) {
           </button>
         </div>
       </div>
+
+      {/* ── SCREENSHOT LIGHTBOX ── */}
+      {lightboxOpen && hasScreenshot && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div className="relative max-w-2xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={payment.paymentPhotoUrl}
+              alt="Instapay receipt full size"
+              className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+            />
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute -top-3 -right-3 w-9 h-9 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
+            >
+              <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <a
+              href={payment.paymentPhotoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-xs bg-white text-gray-700 px-4 py-1.5 rounded-full shadow-lg font-semibold hover:bg-gray-50 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Open original ↗
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
