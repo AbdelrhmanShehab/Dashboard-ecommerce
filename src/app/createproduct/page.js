@@ -5,6 +5,8 @@ import { db, storage } from "../../firebaseConfig";
 import { collection, addDoc, serverTimestamp, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../context/AuthContext";
+import { logActivity } from "../../utils/logger";
 import imageCompression from "browser-image-compression";
 import VariantInput from "../../components/VariantInput";
 import VariantTable from "../../components/VariantTable";
@@ -20,6 +22,7 @@ export default function CreateProductPage() {
 
 function CreateProductContent() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -175,6 +178,8 @@ function CreateProductContent() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+
+      await logActivity("Created Product", `Added new product: ${form.title}`, user);
 
       router.push("/products");
 

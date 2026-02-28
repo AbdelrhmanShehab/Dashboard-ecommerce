@@ -9,8 +9,10 @@ import { useAuth } from "../context/AuthContext";
 const menuItems = [
   { title: "Dashboard", icon: "home-icon.svg", href: "/dashboard", roles: ["admin"] },
   { title: "Users", icon: "user-icon.svg", href: "/users", roles: ["admin"] },
+  { title: "Customers", icon: "user-icon.svg", href: "/customers", roles: ["admin", "editor"] },
   { title: "Products", icon: "product-icon.svg", href: "/products", roles: ["admin", "editor"] },
   { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics", roles: ["admin"] },
+  { title: "Activity Logs", icon: "analysis-icon.svg", href: "/activity", roles: ["admin"] },
   { title: "Categories", icon: "settings-icon.svg", href: "/categories", roles: ["admin", "editor"] },
   { title: "Orders", icon: "checkout.png", href: "/orders", roles: ["admin", "editor"] },
 ];

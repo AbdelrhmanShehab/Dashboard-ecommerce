@@ -10,16 +10,20 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "../../../../context/AuthContext";
+import { logActivity } from "../../../../utils/logger";
 import VariantInput from "../../../../components/VariantInput";
 import VariantTable from "../../../../components/VariantTable";
 
 export default function EditProductPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [originalData, setOriginalData] = useState(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -49,6 +53,15 @@ export default function EditProductPage() {
       const data = snap.data();
 
       setForm({
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        price: data.price,
+        status: data.status,
+        isBestSeller: data.isBestSeller,
+      });
+
+      setOriginalData({
         title: data.title,
         description: data.description,
         category: data.category,
@@ -99,6 +112,16 @@ export default function EditProductPage() {
         images: [...images, ...uploaded],
         updatedAt: serverTimestamp(),
       });
+
+      const changes = {};
+      if (originalData?.title !== form.title) changes.title = { from: originalData?.title, to: form.title };
+      if (originalData?.description !== form.description) changes.description = { from: originalData?.description, to: form.description };
+      if (originalData?.category !== form.category) changes.category = { from: originalData?.category, to: form.category };
+      if (Number(originalData?.price) !== Number(form.price)) changes.price = { from: originalData?.price, to: form.price };
+      if (originalData?.status !== form.status) changes.status = { from: originalData?.status, to: form.status };
+      if (originalData?.isBestSeller !== form.isBestSeller) changes.isBestSeller = { from: originalData?.isBestSeller ? "Yes" : "No", to: form.isBestSeller ? "Yes" : "No" };
+
+      await logActivity("Updated Product", `Edited product: ${form.title}`, user, changes);
 
       router.push("/products");
 

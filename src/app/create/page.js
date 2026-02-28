@@ -4,6 +4,8 @@ import { useState } from "react";
 import { auth, db } from "../../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "../../context/AuthContext";
+import { logActivity } from "../../utils/logger";
 
 import RoleGuard from "../../components/RoleGuard";
 
@@ -16,6 +18,7 @@ export default function CreateUserPage() {
 }
 
 function CreateUserContent() {
+  const { user: currentAdmin } = useAuth();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -54,6 +57,8 @@ function CreateUserContent() {
         status: "active",
         createdAt: serverTimestamp(),
       });
+
+      await logActivity("Created User", `Added new user: ${form.email} as ${form.role}`, currentAdmin);
 
       setSuccess("User created successfully 🎉");
       setForm({ name: "", email: "", password: "", role: "editor" });

@@ -12,6 +12,7 @@ import { useUser } from "../../context/UserContext";
 import sortIcon from "../../../public/icons/sort-icon.svg";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import { logActivity } from "../../utils/logger";
 
 import RoleGuard from "../../components/RoleGuard";
 
@@ -76,7 +77,9 @@ function UserContent() {
 
   const handleDelete = async (id) => {
     try {
+      const userToDeleteEmail = users.find((user) => user.id === id)?.email || "Unknown User";
       await deleteDoc(doc(db, "users", id));
+      await logActivity("Deleted User", `Removed user: ${userToDeleteEmail}`, user);
     } catch (err) {
       console.error("Failed to delete user:", err);
     }
@@ -154,8 +157,8 @@ function UserContent() {
                   <td>
                     <span
                       className={`inline-block px-2 py-1 rounded-lg text-xs ${user.status === "active"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                         }`}
                     >
                       {user.status}

@@ -17,6 +17,7 @@ import { useCollection } from "react-firebase-hooks/firestore";
 import format from "date-fns/format";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import { logActivity } from "../../utils/logger";
 
 import RoleGuard from "../../components/RoleGuard";
 
@@ -49,7 +50,9 @@ function ProductsContent() {
   const deleteProduct = async () => {
     if (!productToDelete) return;
 
+    const productToDeleteTitle = products.find(p => p.id === productToDelete)?.title || "Unknown Product";
     await deleteDoc(doc(db, "products", productToDelete));
+    await logActivity("Deleted Product", `Removed product: ${productToDeleteTitle}`, user);
     setProductToDelete(null);
   };
 
@@ -170,7 +173,7 @@ function ProductsContent() {
 
                   <td className="p-4">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs ${product.totalStock === 0
+                      className={`min-w-[48px] px-2 py-1 rounded-full text-xs ${product.totalStock === 0
                         ? "bg-red-100 text-red-700"
                         : product.totalStock < 5
                           ? "bg-yellow-100 text-yellow-700"
@@ -196,7 +199,7 @@ function ProductsContent() {
 
                   <td className="p-4">
                     {product.isBestSeller ? (
-                      <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
+                      <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs min-w-[70px]">
                         ★ Best Seller
                       </span>
                     ) : (

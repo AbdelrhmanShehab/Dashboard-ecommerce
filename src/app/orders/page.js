@@ -15,6 +15,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCallback } from "react";
+import { logActivity } from "../../utils/logger";
 
 import RoleGuard from "../../components/RoleGuard";
 
@@ -148,6 +149,10 @@ function OrdersContent() {
       updatedAt: new Date(),
     });
 
+    await logActivity("Updated Order Status", `Changed order #${order.id.slice(0, 6).toUpperCase()} status to ${newStatus}`, user, {
+      status: { from: order.status, to: newStatus }
+    });
+
     // Update local state if modal is open
     if (selectedOrder?.id === order.id) {
       setSelectedOrder({ ...order, status: newStatus });
@@ -161,6 +166,9 @@ function OrdersContent() {
       "payment.paid": true,
       updatedAt: new Date(),
     });
+
+    await logActivity("Confirmed Payment", `Marked order #${order.id.slice(0, 6).toUpperCase()} as paid`, user);
+
     if (selectedOrder?.id === order.id) {
       setSelectedOrder({
         ...order,
@@ -476,8 +484,8 @@ function OrderDetailsModal({ order, onClose, updateStatus, confirmPayment }) {
               <div className="mt-8">
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Payment</h3>
                 <div className={`rounded-xl border-2 p-4 space-y-4 ${payment.paid
-                    ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-800/60 dark:bg-emerald-900/20"
-                    : "border-amber-200 bg-amber-50/60 dark:border-amber-800/60 dark:bg-amber-900/20"
+                  ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-800/60 dark:bg-emerald-900/20"
+                  : "border-amber-200 bg-amber-50/60 dark:border-amber-800/60 dark:bg-amber-900/20"
                   }`}>
 
                   {/* Method + Status row */}
@@ -491,8 +499,8 @@ function OrderDetailsModal({ order, onClose, updateStatus, confirmPayment }) {
                       </span>
                     </div>
                     <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${payment.paid
-                        ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700"
-                        : "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700"
+                      ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700"
+                      : "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700"
                       }`}>
                       {payment.paid ? "✓ Paid" : "Pending"}
                     </span>
