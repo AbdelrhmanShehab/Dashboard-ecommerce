@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminAuth, adminDb } from "../../../../firebaseAdmin";
+import { getAdminAuth, getAdminDb } from "../../../../firebaseAdmin";
 
 export async function POST(req) {
   try {
@@ -11,6 +11,9 @@ export async function POST(req) {
         { status: 400 }
       );
     }
+
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
 
     const user = await adminAuth.createUser({
       email,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import { db } from "@/lib/firebase";
+import { db } from "../../../firebaseConfig";
 import {
   doc,
   getDoc,
