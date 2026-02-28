@@ -71,6 +71,7 @@ function ProductsContent() {
         id: docItem.id,
         title: data.title || "Untitled",
         price: Number(data.price || 0),
+        originalPrice: data.originalPrice ? Number(data.originalPrice) : null,
         category: data.category || "-",
         status: data.status || "inactive",
         isBestSeller: data.isBestSeller || false,
@@ -78,6 +79,7 @@ function ProductsContent() {
         variants: data.variants || [],
         totalStock,
         createdAt: data.createdAt || null,
+        offerId: data.offerId || null,
       };
     });
   }, [value]);
@@ -168,7 +170,14 @@ function ProductsContent() {
                   </td>
 
                   <td className="p-4 dark:text-gray-300">
-                    EGP {product.price}
+                    {product.originalPrice && product.originalPrice !== product.price ? (
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 line-through text-xs">EGP {product.originalPrice}</span>
+                        <span className="text-green-600 font-medium">EGP {product.price}</span>
+                      </div>
+                    ) : (
+                      <span>EGP {product.price}</span>
+                    )}
                   </td>
 
                   <td className="p-4">
