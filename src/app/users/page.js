@@ -102,8 +102,8 @@ function UserContent() {
           </Link>
         </div>
       </div>
-      <div className="w-full overflow-x-auto">
-        <div className="inline-block min-w-full align-middle">
+      <div className="w-full bg-white rounded-xl overflow-x-auto shadow-sm dark:bg-[#1a1b23] dark:border dark:border-gray-800">
+        <div className="inline-block min-w-[800px] w-full align-middle">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
             <thead>
               <tr className="bg-gray-100 text-gray-600 uppercase text-sm dark:bg-[#6366f1] dark:text-white">
@@ -116,9 +116,8 @@ function UserContent() {
                     {field}
                     <Image
                       src={sortIcon}
-                      className={`inline-block ml-2 cursor-pointer dark:invert dark:brightness-200 ${
-                        sortField === field ? "opacity-100" : "opacity-50"
-                      }`}
+                      className={`inline-block ml-2 cursor-pointer dark:invert dark:brightness-200 ${sortField === field ? "opacity-100" : "opacity-50"
+                        }`}
                       width={18}
                       height={18}
                       alt="Sort"
@@ -154,11 +153,10 @@ function UserContent() {
                   <td className="capitalize">{user.role}</td>
                   <td>
                     <span
-                      className={`inline-block px-2 py-1 rounded-lg text-xs ${
-                        user.status === "active"
+                      className={`inline-block px-2 py-1 rounded-lg text-xs ${user.status === "active"
                           ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                           : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                      }`}
+                        }`}
                     >
                       {user.status}
                     </span>

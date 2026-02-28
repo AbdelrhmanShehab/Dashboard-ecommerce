@@ -112,8 +112,8 @@ function ProductsContent() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden dark:bg-[#1a1b23] dark:border dark:border-gray-800">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto dark:bg-[#1a1b23] dark:border dark:border-gray-800">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-gray-100 text-gray-600 uppercase text-xs dark:bg-gray-800 dark:text-gray-400">
             <tr>
               <th className="p-4 text-left">Image</th>

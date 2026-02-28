@@ -12,7 +12,7 @@ const menuItems = [
   { title: "Products", icon: "product-icon.svg", href: "/products", roles: ["admin", "editor"] },
   { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics", roles: ["admin"] },
   { title: "Categories", icon: "settings-icon.svg", href: "/categories", roles: ["admin", "editor"] },
-  { title: "Orders", icon: "settings-icon.svg", href: "/orders", roles: ["admin", "editor"] },
+  { title: "Orders", icon: "checkout.png", href: "/orders", roles: ["admin", "editor"] },
 ];
 
 const Sidebar = memo(function Sidebar({ visible, onClose }) {

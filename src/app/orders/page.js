@@ -208,8 +208,8 @@ function OrdersContent() {
           </div>
         </header>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden dark:bg-[#1a1b23] dark:border-gray-800">
-          <table className="w-full text-left border-collapse">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto dark:bg-[#1a1b23] dark:border-gray-800">
+          <table className="w-full min-w-[800px] text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100 dark:bg-gray-800 dark:border-gray-700">
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Order</th>
@@ -475,27 +475,25 @@ function OrderDetailsModal({ order, onClose, updateStatus, confirmPayment }) {
               {/* ── PAYMENT INFO CARD ── */}
               <div className="mt-8">
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Payment</h3>
-                <div className={`rounded-xl border-2 p-4 space-y-4 ${
-                  payment.paid
+                <div className={`rounded-xl border-2 p-4 space-y-4 ${payment.paid
                     ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-800/60 dark:bg-emerald-900/20"
                     : "border-amber-200 bg-amber-50/60 dark:border-amber-800/60 dark:bg-amber-900/20"
-                }`}>
+                  }`}>
 
                   {/* Method + Status row */}
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
-                      <span className={`text-lg ${ isOnline ? "" : "" }`}>
+                      <span className={`text-lg ${isOnline ? "" : ""}`}>
                         {isOnline ? "💳" : "💵"}
                       </span>
                       <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">
                         {isOnline ? "Online Payment (Instapay)" : "Cash on Delivery"}
                       </span>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
-                      payment.paid
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${payment.paid
                         ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700"
                         : "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700"
-                    }`}>
+                      }`}>
                       {payment.paid ? "✓ Paid" : "Pending"}
                     </span>
                   </div>
@@ -555,8 +553,8 @@ function OrderDetailsModal({ order, onClose, updateStatus, confirmPayment }) {
                       {confirmingPayment ? (
                         <>
                           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                           </svg>
                           Confirming...
                         </>
