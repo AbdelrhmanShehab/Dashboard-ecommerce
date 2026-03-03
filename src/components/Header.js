@@ -24,11 +24,15 @@ const Header = memo(function Header({ toggleSidebar }) {
   }, []);
 
   /* REAL-TIME ORDERS FOR NOTIFICATIONS */
-  const notificationsQuery = query(
-    collection(db, "orders"),
-    orderBy("createdAt", "desc"),
-    limit(5)
-  );
+  const notificationsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(
+      collection(db, "orders"),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    );
+  }, [user]);
+
   const [snapshot] = useCollection(notificationsQuery);
 
   const notifications = useMemo(() => {
@@ -65,80 +69,84 @@ const Header = memo(function Header({ toggleSidebar }) {
     <header className="bg-white border-b dark:bg-[#1a1b23] relative z-50">
       <div className="w-[95%] m-auto flex justify-between items-center h-[64px]">
 
-        <button onClick={toggleSidebar} className="w-6 h-6 relative">
-          <Image src="/icons/sidebar-icon.svg" fill alt="menu" />
-        </button>
+        {user && (
+          <button onClick={toggleSidebar} className="w-6 h-6 relative">
+            <Image src="/icons/sidebar-icon.svg" fill alt="menu" />
+          </button>
+        )}
 
         <div className="flex items-center gap-4">
 
           {/* NOTIFICATION BELL */}
-          <div className="relative">
-            <button
-              onClick={handleToggleNotifications}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors relative"
-            >
-              <svg className="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {pendingCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
+          {user && (
+            <div className="relative">
+              <button
+                onClick={handleToggleNotifications}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors relative"
+              >
+                <svg className="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {pendingCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
 
-            {/* DROPDOWN */}
-            {showNotifications && (
-              <>
-                <div
-                  className="fixed inset-0 z-0"
-                  onClick={() => setShowNotifications(false)}
-                />
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-[#1a1b23] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-2 z-10 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                    <h3 className="font-bold text-gray-900 dark:text-white">Recent Orders</h3>
-                    {pendingCount > 0 && <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">{pendingCount} New</span>}
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="p-8 text-center text-gray-400 text-sm">No recent orders</div>
-                    ) : (
-                      notifications.map(notif => (
-                        <div
-                          key={notif.id}
-                          onClick={() => {
-                            router.push("/orders");
-                            setShowNotifications(false);
-                          }}
-                          className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-50 dark:border-gray-800 last:border-none transition-colors"
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="text-xs font-bold text-gray-900 dark:text-white">#{notif.id.slice(0, 6).toUpperCase()}</span>
-                            <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${notif.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                              }`}>
-                              {notif.status}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {notif.delivery?.firstName} {notif.delivery?.lastName} — {notif.totals?.total} EGP
-                          </p>
-                        </div>
-                      ))
-                    )}
-                  </div>
+              {/* DROPDOWN */}
+              {showNotifications && (
+                <>
                   <div
-                    onClick={() => {
-                      router.push("/orders");
-                      setShowNotifications(false);
-                    }}
-                    className="mt-2 mx-4 mb-2 p-2 text-center text-xs font-bold text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer transition-all"
-                  >
-                    View All Orders
+                    className="fixed inset-0 z-0"
+                    onClick={() => setShowNotifications(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-[#1a1b23] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-2 z-10 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                      <h3 className="font-bold text-gray-900 dark:text-white">Recent Orders</h3>
+                      {pendingCount > 0 && <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">{pendingCount} New</span>}
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400 text-sm">No recent orders</div>
+                      ) : (
+                        notifications.map(notif => (
+                          <div
+                            key={notif.id}
+                            onClick={() => {
+                              router.push("/orders");
+                              setShowNotifications(false);
+                            }}
+                            className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-50 dark:border-gray-800 last:border-none transition-colors"
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="text-xs font-bold text-gray-900 dark:text-white">#{notif.id.slice(0, 6).toUpperCase()}</span>
+                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${notif.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                                }`}>
+                                {notif.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {notif.delivery?.firstName} {notif.delivery?.lastName} — {notif.totals?.total} EGP
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div
+                      onClick={() => {
+                        router.push("/orders");
+                        setShowNotifications(false);
+                      }}
+                      className="mt-2 mx-4 mb-2 p-2 text-center text-xs font-bold text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer transition-all"
+                    >
+                      View All Orders
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-          </div>
+                </>
+              )}
+            </div>
+          )}
 
           <button onClick={() => setToggleMode(!togglemode)}>
             <Image

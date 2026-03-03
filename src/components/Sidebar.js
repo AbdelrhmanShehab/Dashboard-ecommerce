@@ -20,7 +20,9 @@ const menuItems = [
 
 const Sidebar = memo(function Sidebar({ visible, onClose }) {
   const pathname = usePathname();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
+
+  if (!user) return null;
 
   const handleClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
