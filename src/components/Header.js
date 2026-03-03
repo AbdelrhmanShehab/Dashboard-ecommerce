@@ -11,7 +11,7 @@ import { useCollection } from "react-firebase-hooks/firestore";
 import { db } from "../firebaseConfig";
 
 const Header = memo(function Header({ toggleSidebar }) {
-  const { user, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const { togglemode, setToggleMode } = useTheme();
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -160,8 +160,12 @@ const Header = memo(function Header({ toggleSidebar }) {
           {user && (
             <>
               <div className="hidden md:flex flex-col items-end">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Administrator</span>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-none">{user.email?.split('@')[0]}</span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                  {role || "User"}
+                </span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-none">
+                  {user.email?.split('@')[0]}
+                </span>
               </div>
               <button
                 onClick={handleLogout}

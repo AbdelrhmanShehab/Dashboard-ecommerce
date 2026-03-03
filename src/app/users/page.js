@@ -18,7 +18,7 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function UserPage() {
   return (
-    <RoleGuard allowedRoles={["admin"]}>
+    <RoleGuard allowedRoles={["admin", "editor"]}>
       <UserContent />
     </RoleGuard>
   );
@@ -152,19 +152,9 @@ function UserContent() {
                   key={user.id}
                   className="border-t border-gray-200 dark:border-gray-600"
                 >
+                  <td className="py-3 px-4 font-semibold">{user.name || "N/A"}</td>
                   <td className="py-3 px-4">{user.email}</td>
                   <td className="capitalize">{user.role}</td>
-                  <td>
-                    <span
-                      className={`inline-block px-2 py-1 rounded-lg text-xs ${user.status === "active"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                        }`}
-                    >
-                      {user.status}
-                    </span>
-                  </td>
-
                   <td className="py-3 px-4">
                     {user.createdAt
                       ? format(user.createdAt.toDate(), "dd MMM yyyy")

@@ -34,7 +34,7 @@ import AnalyticsCard from "../../components/AnalyticsCard";
 
 export default function AnalyticsPage() {
   return (
-    <RoleGuard allowedRoles={["admin"]}>
+    <RoleGuard allowedRoles={["admin", "editor"]}>
       <AnalyticsContent />
     </RoleGuard>
   );
@@ -63,7 +63,7 @@ function AnalyticsContent() {
     const totalRevenue = orders
       .filter(o => o.status !== "cancelled")
       .reduce((sum, o) => sum + (o.totals?.total || 0), 0);
-    
+
     const aov = orders.length ? totalRevenue / orders.length : 0;
 
     // Users
@@ -154,37 +154,37 @@ function AnalyticsContent() {
 
         {/* KPI CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <AnalyticsCard 
-            title="Total Revenue" 
-            value={`${metrics?.totalRevenue.toLocaleString()} EGP`} 
-            color="emerald" 
+          <AnalyticsCard
+            title="Total Revenue"
+            value={`${metrics?.totalRevenue.toLocaleString()} EGP`}
+            color="emerald"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
             trend="up"
             trendValue="12.5%"
           />
-          <AnalyticsCard 
-            title="Average Order" 
-            value={`${Math.round(metrics?.aov || 0).toLocaleString()} EGP`} 
-            color="indigo" 
+          <AnalyticsCard
+            title="Average Order"
+            value={`${Math.round(metrics?.aov || 0).toLocaleString()} EGP`}
+            color="indigo"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>}
           />
-          <AnalyticsCard 
-            title="Active Users" 
-            value={metrics?.activeUsers} 
-            color="blue" 
+          <AnalyticsCard
+            title="Active Users"
+            value={metrics?.activeUsers}
+            color="blue"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
           />
-          <AnalyticsCard 
-            title="Low Stock" 
-            value={metrics?.lowStockItems} 
-            color="rose" 
+          <AnalyticsCard
+            title="Low Stock"
+            value={metrics?.lowStockItems}
+            color="rose"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>}
           />
         </div>
 
         {/* CHARTS GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-          
+
           {/* REVENUE BY CATEGORY */}
           <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 dark:bg-[#1a1b23] dark:border-gray-800">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Revenue by Category</h3>
@@ -204,11 +204,11 @@ function AnalyticsContent() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-           {/* USER GROWTH */}
-           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 dark:bg-[#1a1b23] dark:border-gray-800">
+          {/* USER GROWTH */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 dark:bg-[#1a1b23] dark:border-gray-800">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">User Acquisition</h3>
             <div className="w-full">
-               <LineChart users={metrics?.users} />
+              <LineChart users={metrics?.users} />
             </div>
           </div>
 

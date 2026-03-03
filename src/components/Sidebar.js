@@ -7,15 +7,15 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 
 const menuItems = [
-  { title: "Dashboard", icon: "home-icon.svg", href: "/dashboard", roles: ["admin"] },
-  { title: "Users", icon: "user-icon.svg", href: "/users", roles: ["admin"] },
+  { title: "Dashboard", icon: "home-icon.svg", href: "/dashboard", roles: ["admin", "editor"] },
+  { title: "Users", icon: "user-icon.svg", href: "/users", roles: ["admin", "editor"] },
   { title: "Customers", icon: "user-icon.svg", href: "/customers", roles: ["admin", "editor"] },
   { title: "Products", icon: "product-icon.svg", href: "/products", roles: ["admin", "editor"] },
   { title: "Categories", icon: "settings-icon.svg", href: "/categories", roles: ["admin", "editor"] },
   { title: "Orders", icon: "checkout.png", href: "/orders", roles: ["admin", "editor"] },
   { title: "Offers", icon: "analysis-icon.svg", href: "/offers", roles: ["admin", "editor"] },
-  { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics", roles: ["admin"] },
-  { title: "Activity Logs", icon: "analysis-icon.svg", href: "/activity", roles: ["admin"] },
+  { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics", roles: ["admin", "editor"] },
+  { title: "Activity Logs", icon: "analysis-icon.svg", href: "/activity", roles: ["admin", "editor"] },
 ];
 
 const Sidebar = memo(function Sidebar({ visible, onClose }) {
@@ -30,7 +30,9 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
     }
   };
 
-  const filteredItems = menuItems.filter(item => !item.roles || item.roles.includes(role));
+  const filteredItems = menuItems.filter(item =>
+    !item.roles || (role && item.roles.includes(role.toLowerCase()))
+  );
 
   return (
     <aside
