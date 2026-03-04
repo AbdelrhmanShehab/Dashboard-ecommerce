@@ -14,8 +14,9 @@ const menuItems = [
   { title: "Categories", icon: "settings-icon.svg", href: "/categories", roles: ["admin", "editor"] },
   { title: "Orders", icon: "checkout.png", href: "/orders", roles: ["admin", "editor"] },
   { title: "Offers", icon: "analysis-icon.svg", href: "/offers", roles: ["admin", "editor"] },
-  { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics", roles: ["admin", "editor"] },
-  { title: "Activity Logs", icon: "analysis-icon.svg", href: "/activity", roles: ["admin", "editor"] },
+  { title: "Shipping", icon: "settings-icon.svg", href: "/shipping", roles: ["admin", "editor"] },
+  { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics", roles: ["admin"] },
+  { title: "Activity Logs", icon: "analysis-icon.svg", href: "/activity", roles: ["admin"] },
 ];
 
 const Sidebar = memo(function Sidebar({ visible, onClose }) {

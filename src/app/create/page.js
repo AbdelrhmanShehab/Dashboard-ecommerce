@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "../../context/AuthContext";
 import { logActivity } from "../../utils/logger";
+import { getFirebaseError } from "../../utils/firebaseErrors";
 
 import RoleGuard from "../../components/RoleGuard";
 

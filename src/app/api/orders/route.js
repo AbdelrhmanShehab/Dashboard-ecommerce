@@ -75,7 +75,20 @@ export async function POST(req) {
       });
     }
 
-    const shipping = 50;
+    /* ---------------- DYNAMIC SHIPPING FEE ---------------- */
+    let shipping = 50; // Default fallback
+    if (delivery?.city) {
+      try {
+        const cityRef = doc(db, "cities", delivery.city);
+        const citySnap = await getDoc(cityRef);
+        if (citySnap.exists()) {
+          shipping = citySnap.data().fee ?? 50;
+        }
+      } catch (err) {
+        console.error("SHIPPING FETCH ERROR:", err);
+      }
+    }
+
     const total = subtotal + shipping;
 
     /* ---------------- SAVE ORDER ---------------- */
