@@ -34,7 +34,7 @@ import AnalyticsCard from "../../components/AnalyticsCard";
 
 export default function AnalyticsPage() {
   return (
-    <RoleGuard allowedRoles={["admin", "editor"]}>
+    <RoleGuard allowedRoles={["admin"]}>
       <AnalyticsContent />
     </RoleGuard>
   );

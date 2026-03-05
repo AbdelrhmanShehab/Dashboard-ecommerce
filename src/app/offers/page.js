@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { db } from "../../firebaseConfig";
 import {
     collection,
@@ -14,21 +14,25 @@ import {
     writeBatch,
 } from "firebase/firestore";
 import { useAuth } from "../../context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import RoleGuard from "../../components/RoleGuard";
 import { logActivity } from "../../utils/logger";
 import format from "date-fns/format";
 
+
 export default function OffersPage() {
     return (
         <RoleGuard allowedRoles={["admin", "editor"]}>
-            <OffersContent />
+            <Suspense fallback={<div className="p-20 text-center">Loading...</div>}>
+                <OffersContent />
+            </Suspense>
         </RoleGuard>
     );
 }
 
 function OffersContent() {
-    const { user } = useAuth();
+    const { user, role } = useAuth();
+    const searchParams = useSearchParams();
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [fetchLoading, setFetchLoading] = useState(true);
@@ -43,6 +47,20 @@ function OffersContent() {
     // Target Options (Products or Categories)
     const [categories, setCategories] = useState([]);
     const [products, setProducts] = useState([]);
+
+    // Check for query params to pre-fill
+    useEffect(() => {
+        const pid = searchParams.get("pid");
+        const email = searchParams.get("email");
+
+        if (pid && email) {
+            // Auto-open modal with pre-filled info
+            setName(`Special Offer for ${email}`);
+            setType("product");
+            setTargetId(pid);
+            setIsModalOpen(true);
+        }
+    }, [searchParams]);
 
     // Fetch initial data
     useEffect(() => {
@@ -243,9 +261,11 @@ function OffersContent() {
             {/* HEADER */}
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-2xl font-semibold">Offers & Discounts</h1>
-                <button onClick={openModal} className="bg-black text-white px-6 py-2 rounded-lg">
-                    Create Offer
-                </button>
+                {role === "admin" && (
+                    <button onClick={openModal} className="bg-black text-white px-6 py-2 rounded-lg">
+                        Create Offer
+                    </button>
+                )}
             </div>
 
             {/* TABLE */}
@@ -258,12 +278,12 @@ function OffersContent() {
                             <th className="p-4">Target</th>
                             <th className="p-4">Discount</th>
                             <th className="p-4">Created Date</th>
-                            <th className="p-4">Actions</th>
+                            {role === "admin" && <th className="p-4">Actions</th>}
                         </tr>
                     </thead>
                     <tbody>
-                        {fetchLoading && <tr><td colSpan={6} className="p-10 text-center">Loading...</td></tr>}
-                        {!fetchLoading && offers.length === 0 && <tr><td colSpan={6} className="p-10 text-center">No active offers.</td></tr>}
+                        {fetchLoading && <tr><td colSpan={role === "admin" ? 6 : 5} className="p-10 text-center">Loading...</td></tr>}
+                        {!fetchLoading && offers.length === 0 && <tr><td colSpan={role === "admin" ? 6 : 5} className="p-10 text-center">No active offers.</td></tr>}
                         {!fetchLoading && offers.map((offer) => (
                             <tr key={offer.id} className="border-t dark:border-gray-700">
                                 <td className="p-4 font-medium">{offer.name}</td>
@@ -273,11 +293,13 @@ function OffersContent() {
                                 <td className="p-4">
                                     {offer.createdAt ? format(offer.createdAt.toDate(), "dd MMM yyyy, HH:mm") : "-"}
                                 </td>
-                                <td className="p-4">
-                                    <button onClick={() => handleRemoveOffer(offer.id, offer.name)} className="text-red-500 hover:text-red-700 font-medium disabled:opacity-50" disabled={loading}>
-                                        End Offer
-                                    </button>
-                                </td>
+                                {role === "admin" && (
+                                    <td className="p-4">
+                                        <button onClick={() => handleRemoveOffer(offer.id, offer.name)} className="text-red-500 hover:text-red-700 font-medium disabled:opacity-50" disabled={loading}>
+                                            End Offer
+                                        </button>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>

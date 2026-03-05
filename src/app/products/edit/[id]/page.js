@@ -12,7 +12,6 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "../../../../context/AuthContext";
 import { logActivity } from "../../../../utils/logger";
-import VariantInput from "../../../../components/VariantInput";
 import VariantTable from "../../../../components/VariantTable";
 
 export default function EditProductPage() {

@@ -8,14 +8,16 @@ import { useAuth } from "../context/AuthContext";
 
 const menuItems = [
   { title: "Dashboard", icon: "home-icon.svg", href: "/dashboard", roles: ["admin", "editor"] },
-  { title: "Users", icon: "user-icon.svg", href: "/users", roles: ["admin", "editor"] },
+  { title: "Users", icon: "user-icon.svg", href: "/users", roles: ["admin"] },
   { title: "Customers", icon: "user-icon.svg", href: "/customers", roles: ["admin", "editor"] },
+  { title: "Leads", icon: "analytics-icon.svg", href: "/leads", roles: ["admin"] },
   { title: "Products", icon: "product-icon.svg", href: "/products", roles: ["admin", "editor"] },
   { title: "Categories", icon: "settings-icon.svg", href: "/categories", roles: ["admin", "editor"] },
   { title: "Orders", icon: "checkout.png", href: "/orders", roles: ["admin", "editor"] },
   { title: "Offers", icon: "analysis-icon.svg", href: "/offers", roles: ["admin", "editor"] },
   { title: "Shipping", icon: "settings-icon.svg", href: "/shipping", roles: ["admin", "editor"] },
   { title: "Analytics", icon: "analysis-icon.svg", href: "/analytics", roles: ["admin"] },
+  { title: "Product Stats", icon: "analysis-icon.svg", href: "/product-stats", roles: ["admin"] },
   { title: "Activity Logs", icon: "analysis-icon.svg", href: "/activity", roles: ["admin"] },
 ];
 

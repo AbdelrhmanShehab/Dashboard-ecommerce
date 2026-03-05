@@ -12,7 +12,7 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function CreateUserPage() {
   return (
-    <RoleGuard allowedRoles={["admin"]}>
+    <RoleGuard allowedRoles={["admin", "editor"]}>
       <CreateUserContent />
     </RoleGuard>
   );
@@ -61,8 +61,11 @@ function CreateUserContent() {
 
       await logActivity("Created User", `Added new user: ${form.email} as ${form.role}`, currentAdmin);
 
-      setSuccess("User created successfully 🎉");
+      setSuccess("User created successfully 🎉. You will be signed out now to maintain security.");
       setForm({ name: "", email: "", password: "", role: "editor" });
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
     } catch (err) {
       setError(getFirebaseError(err.code));
     } finally {

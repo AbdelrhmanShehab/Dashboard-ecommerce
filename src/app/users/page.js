@@ -1,8 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, deleteDoc, doc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
+import { useState, useEffect } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
 import format from "date-fns/format";
@@ -18,22 +16,46 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function UserPage() {
   return (
-    <RoleGuard allowedRoles={["admin", "editor"]}>
+    <RoleGuard allowedRoles={["admin"]}>
       <UserContent />
     </RoleGuard>
   );
 }
 
 function UserContent() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const router = useRouter();
   const [sortField, setSortField] = useState("email");
   const [sortDirection, setSortDirection] = useState("asc");
   const [searchTerm, setSearchTerm] = useState("");
-  const [value, loading, error] = useCollection(collection(db, "users"));
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const { setSelectedUser } = useUser();
-  if (!user) router.push("/login");
-  if (!user) return null;
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setUsers(data);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUsers();
+    } else {
+      router.push("/login");
+    }
+  }, [user, router]);
+
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -43,20 +65,19 @@ function UserContent() {
     }
   };
 
-  const users = value?.docs
-    .map((doc) => ({ id: doc.id, ...doc.data() }))
+  const filteredUsers = users
     .filter((user) =>
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()),
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-
     .sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
 
       if (sortField === "createdAt") {
         return sortDirection === "asc"
-          ? (aVal?.toDate?.() ?? 0) - (bVal?.toDate?.() ?? 0)
-          : (bVal?.toDate?.() ?? 0) - (aVal?.toDate?.() ?? 0);
+          ? new Date(aVal) - new Date(bVal)
+          : new Date(bVal) - new Date(aVal);
       }
 
       return sortDirection === "asc"
@@ -65,25 +86,28 @@ function UserContent() {
     });
 
   const handleSetUserData = (user) => {
-    const { id, name, role, status, createdAt } = user;
-    setSelectedUser({
-      id,
-      name,
-      role,
-      status,
-      createdAt: createdAt?.toDate() || null,
-    });
+    setSelectedUser(user);
   };
 
   const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this user from BOTH Authentication and Database?")) return;
     try {
-      const userToDeleteEmail = users.find((user) => user.id === id)?.email || "Unknown User";
-      await deleteDoc(doc(db, "users", id));
+      const userToDeleteEmail = users.find((u) => u.id === id)?.email || "Unknown User";
+      const res = await fetch(`/api/users?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
       await logActivity("Deleted User", `Removed user: ${userToDeleteEmail}`, user);
+      fetchUsers(); // Refresh list
     } catch (err) {
       console.error("Failed to delete user:", err);
+      alert("Failed to delete user: " + err.message);
     }
   };
+
+
+  if (!user) return null;
 
   return (
     <main className="p-4 dark:bg-[#1a1b23] dark:text-white">
@@ -100,9 +124,11 @@ function UserContent() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-4 py-2 rounded-md border dark:bg-[#0d1321] dark:border-gray-600 dark:text-white"
           />
-          <Link href="/create">
-            <MainBtn content="Add User" />
-          </Link>
+          {(role === "admin" || role === "editor") && (
+            <Link href="/create">
+              <MainBtn content="Add User" />
+            </Link>
+          )}
         </div>
       </div>
       <div className="w-full bg-white rounded-xl overflow-x-auto shadow-sm dark:bg-[#1a1b23] dark:border dark:border-gray-800">
@@ -140,14 +166,14 @@ function UserContent() {
                   </td>
                 </tr>
               )}
-              {users?.length === 0 && !loading && (
+              {filteredUsers?.length === 0 && !loading && (
                 <tr>
                   <td colSpan={5} className="p-4 text-gray-500">
                     No users found.
                   </td>
                 </tr>
               )}
-              {users?.map((user) => (
+              {filteredUsers?.map((user) => (
                 <tr
                   key={user.id}
                   className="border-t border-gray-200 dark:border-gray-600"
@@ -157,11 +183,11 @@ function UserContent() {
                   <td className="capitalize">{user.role}</td>
                   <td className="py-3 px-4">
                     {user.createdAt
-                      ? format(user.createdAt.toDate(), "dd MMM yyyy")
+                      ? format(new Date(user.createdAt), "dd MMM yyyy")
                       : "—"}
                   </td>
                   <td className="py-3 px-4 space-x-2 flex justify-center flex-col md:flex-row items-center">
-                    <Link href="/edit">
+                    <Link href="/users/edit">
                       <button
                         onClick={() => handleSetUserData(user)}
                         className="px-2 py-1 rounded cursor-pointer"
@@ -192,8 +218,26 @@ function UserContent() {
               ))}
               {error && (
                 <tr>
-                  <td colSpan={5} className="p-4 text-red-500">
-                    Error loading users: {error.message}
+                  <td colSpan={5} className="p-8 text-red-500">
+                    <div className="max-w-md mx-auto bg-red-50 dark:bg-red-900/10 p-6 rounded-xl border border-red-100 dark:border-red-900/30">
+                      <p className="font-bold text-lg mb-2">Error loading users</p>
+                      <p className="text-sm mb-4">The system was unable to fetch the user list from Firebase Authentication.</p>
+
+                      {error.message?.includes("Failed to fetch") && (
+                        <div className="text-left text-xs bg-white dark:bg-[#0D1321] p-4 rounded-lg border border-red-200 dark:border-red-800 mb-4 space-y-2">
+                          <p className="font-bold text-red-600 italic">Possible Cause: Missing Credentials</p>
+                          <p>It looks like the <strong>Firebase Admin SDK</strong> is not configured yet.</p>
+                          <p>Please ensure you have filled the <code>.env.local</code> file in the project root with your service account keys.</p>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={fetchUsers}
+                        className="px-6 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
+                      >
+                        Try Refreshing
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}

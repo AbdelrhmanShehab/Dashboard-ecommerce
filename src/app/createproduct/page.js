@@ -14,7 +14,7 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function CreateProductPage() {
   return (
-    <RoleGuard allowedRoles={["admin"]}>
+    <RoleGuard allowedRoles={["admin", "editor"]}>
       <CreateProductContent />
     </RoleGuard>
   );
