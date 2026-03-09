@@ -14,7 +14,7 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function DashboardPage() {
   return (
-    <RoleGuard allowedRoles={["admin"]}>
+    <RoleGuard allowedRoles={["admin", "editor"]}>
       <DashboardContent />
     </RoleGuard>
   );
@@ -79,10 +79,16 @@ function DashboardContent() {
     limit(200)
   );
 
+  // LIVE STATS QUERIES
+  const livePresenceQuery = query(collection(db, "activePresence"), limit(500));
+  const activeCartsQuery = query(collection(db, "leads"), limit(500));
+
   const [recentProductsSnap] = useCollection(recentProductsQuery);
   const [recentOrdersSnap] = useCollection(recentOrdersQuery);
   const [ordersSnap] = useCollection(ordersForMetricsQuery);
   const [productsSnap] = useCollection(productsForMetricsQuery);
+  const [liveSnap] = useCollection(livePresenceQuery);
+  const [leadsSnap] = useCollection(activeCartsQuery);
 
   /* ---------------- LOADING STATE ---------------- */
   if (loading) {
@@ -110,6 +116,10 @@ function DashboardContent() {
     return totalStock > 0 && totalStock < 5;
   }).length ?? 0;
 
+  // Real-time Live Counters
+  const liveCount = liveSnap?.size || 0;
+  const activeCartsCount = leadsSnap?.docs.filter(d => d.data().status === 'pending' && d.data().lastActivity === 'cart').length || 0;
+
   return (
     <main className="min-h-screen bg-[#f6f7fb] px-8 py-10 dark:bg-[#1a1b23] dark:text-white">
       {/* HEADER */}
@@ -121,7 +131,9 @@ function DashboardContent() {
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+        <DashboardCard title="Live Now" value={liveCount} highlighted={liveCount > 0} />
+        <DashboardCard title="Active Carts" value={activeCartsCount} highlighted={activeCartsCount > 0} />
         <DashboardCard title="Products" value={totalProducts} />
         <DashboardCard title="Orders" value={totalOrders} />
         <DashboardCard title="Revenue" value={`${revenue.toLocaleString()} EGP`} />
@@ -265,11 +277,20 @@ function DashboardContent() {
 }
 
 /* ---------------- REUSABLE CARD (memoized) ---------------- */
-const DashboardCard = memo(function DashboardCard({ title, value }) {
+const DashboardCard = memo(function DashboardCard({ title, value, highlighted }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition dark:bg-[#1a1b23] dark:border-gray-800">
-      <p className="text-sm text-gray-500 mb-2 dark:text-gray-400">{title}</p>
-      <h2 className="text-2xl font-semibold dark:text-white">{value}</h2>
+    <div className={`bg-white rounded-2xl p-6 shadow-sm border transition ${highlighted ? "border-indigo-500 ring-4 ring-indigo-50 shadow-md" : "border-gray-100 dark:border-gray-800"
+      } hover:shadow-md dark:bg-[#1a1b23]`}>
+      <div className="flex justify-between items-start mb-2">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+        {highlighted && (
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+          </span>
+        )}
+      </div>
+      <h2 className="text-2xl font-semibold dark:text-white transition-all">{value}</h2>
     </div>
   );
 });

@@ -4,18 +4,22 @@ import { useState } from "react";
 import { auth, db } from "../../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "../../context/AuthContext";
+import { logActivity } from "../../utils/logger";
+import { getFirebaseError } from "../../utils/firebaseErrors";
 
 import RoleGuard from "../../components/RoleGuard";
 
 export default function CreateUserPage() {
   return (
-    <RoleGuard allowedRoles={["admin"]}>
+    <RoleGuard allowedRoles={["admin", "editor"]}>
       <CreateUserContent />
     </RoleGuard>
   );
 }
 
 function CreateUserContent() {
+  const { user: currentAdmin } = useAuth();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -55,8 +59,13 @@ function CreateUserContent() {
         createdAt: serverTimestamp(),
       });
 
-      setSuccess("User created successfully 🎉");
+      await logActivity("Created User", `Added new user: ${form.email} as ${form.role}`, currentAdmin);
+
+      setSuccess("User created successfully 🎉. You will be signed out now to maintain security.");
       setForm({ name: "", email: "", password: "", role: "editor" });
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
     } catch (err) {
       setError(getFirebaseError(err.code));
     } finally {

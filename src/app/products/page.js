@@ -17,6 +17,7 @@ import { useCollection } from "react-firebase-hooks/firestore";
 import format from "date-fns/format";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import { logActivity } from "../../utils/logger";
 
 import RoleGuard from "../../components/RoleGuard";
 
@@ -49,7 +50,9 @@ function ProductsContent() {
   const deleteProduct = async () => {
     if (!productToDelete) return;
 
+    const productToDeleteTitle = products.find(p => p.id === productToDelete)?.title || "Unknown Product";
     await deleteDoc(doc(db, "products", productToDelete));
+    await logActivity("Deleted Product", `Removed product: ${productToDeleteTitle}`, user);
     setProductToDelete(null);
   };
 
@@ -68,6 +71,7 @@ function ProductsContent() {
         id: docItem.id,
         title: data.title || "Untitled",
         price: Number(data.price || 0),
+        originalPrice: data.originalPrice ? Number(data.originalPrice) : null,
         category: data.category || "-",
         status: data.status || "inactive",
         isBestSeller: data.isBestSeller || false,
@@ -75,6 +79,7 @@ function ProductsContent() {
         variants: data.variants || [],
         totalStock,
         createdAt: data.createdAt || null,
+        offerId: data.offerId || null,
       };
     });
   }, [value]);
@@ -112,8 +117,8 @@ function ProductsContent() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden dark:bg-[#1a1b23] dark:border dark:border-gray-800">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto dark:bg-[#1a1b23] dark:border dark:border-gray-800">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-gray-100 text-gray-600 uppercase text-xs dark:bg-gray-800 dark:text-gray-400">
             <tr>
               <th className="p-4 text-left">Image</th>
@@ -165,12 +170,19 @@ function ProductsContent() {
                   </td>
 
                   <td className="p-4 dark:text-gray-300">
-                    EGP {product.price}
+                    {product.originalPrice && product.originalPrice !== product.price ? (
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 line-through text-xs">EGP {product.originalPrice}</span>
+                        <span className="text-green-600 font-medium">EGP {product.price}</span>
+                      </div>
+                    ) : (
+                      <span>EGP {product.price}</span>
+                    )}
                   </td>
 
                   <td className="p-4">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs ${product.totalStock === 0
+                      className={`min-w-[48px] px-2 py-1 rounded-full text-xs ${product.totalStock === 0
                         ? "bg-red-100 text-red-700"
                         : product.totalStock < 5
                           ? "bg-yellow-100 text-yellow-700"
@@ -196,7 +208,7 @@ function ProductsContent() {
 
                   <td className="p-4">
                     {product.isBestSeller ? (
-                      <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
+                      <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs min-w-[70px]">
                         ★ Best Seller
                       </span>
                     ) : (

@@ -17,8 +17,8 @@ export default function VariantTable({ variants, setVariants }) {
         Variant Stock
       </h3>
 
-      <div className="border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="border rounded-xl overflow-x-auto">
+        <table className="w-full min-w-[400px] text-sm">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-3 text-left">Color</th>
