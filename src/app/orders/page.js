@@ -351,21 +351,21 @@ function OrderDetailsModal({ order, onClose, updateStatus, confirmPayment }) {
         <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar">
 
           {/* STEPPER / TIMELINE */}
-          <div className="mb-10 px-4">
+          <div className="mb-6 md:mb-10 px-0 sm:px-4">
             <div className="flex items-center justify-between relative">
               {/* Connector Line */}
-              <div className="absolute top-5 left-0 w-full h-0.5 bg-gray-100 -z-10"></div>
-              <div className="absolute top-5 left-0 h-0.5 bg-emerald-500 transition-all duration-500 -z-10" style={{ width: `${(currentStepIndex / (timelineSteps.length - 1)) * 100}%` }}></div>
-
+              <div className="absolute top-4 sm:top-5 left-0 w-full h-0.5 bg-gray-100 -z-10"></div>
+              <div className="absolute top-4 sm:top-5 left-0 h-0.5 bg-emerald-500 transition-all duration-500 -z-10" style={{ width: `${(currentStepIndex / (timelineSteps.length - 1)) * 100}%` }}></div>
+ 
               {timelineSteps.map((step, idx) => (
                 <div key={step.id} className="flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 ${idx <= currentStepIndex
-                    ? "bg-white border-emerald-500 text-lg"
-                    : "bg-white border-gray-100 text-lg opacity-40"
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 sm:border-4 transition-all duration-300 ${idx <= currentStepIndex
+                    ? "bg-white border-emerald-500 text-sm sm:text-lg"
+                    : "bg-white border-gray-100 text-sm sm:text-lg opacity-40"
                     }`}>
                     {step.icon}
                   </div>
-                  <span className={`text-[10px] sm:text-xs font-bold mt-2 uppercase tracking-tight ${idx <= currentStepIndex ? "text-gray-900 dark:text-white" : "text-gray-300 dark:text-gray-700"}`}>
+                  <span className={`text-[9px] sm:text-xs font-bold mt-2 uppercase tracking-tight text-center ${idx <= currentStepIndex ? "text-gray-900 dark:text-white" : "text-gray-300 dark:text-gray-700"}`}>
                     {step.label}
                   </span>
                 </div>

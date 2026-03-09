@@ -92,12 +92,12 @@ function ProductsContent() {
   return (
     <main className="p-6 bg-gray-50 min-h-screen dark:bg-[#1a1b23] dark:text-white">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <h1 className="text-2xl font-semibold">
           Products
         </h1>
-
-        <div className="flex gap-4 items-center">
+ 
+        <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center w-full md:w-auto">
           <input
             type="text"
             placeholder="Search products..."
@@ -105,11 +105,11 @@ function ProductsContent() {
             onChange={(e) =>
               setSearchTerm(e.target.value)
             }
-            className="border px-4 py-2 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            className="border px-4 py-2 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white flex-1"
           />
-
+ 
           <Link href="/createproduct">
-            <button className="bg-black text-white px-6 py-2 rounded-lg">
+            <button className="bg-black text-white px-6 py-2 rounded-lg w-full sm:w-auto whitespace-nowrap">
               Add Product
             </button>
           </Link>
