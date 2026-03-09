@@ -5,6 +5,7 @@ import ClientLayout from "../components/ClientLayout";
 import { ThemeProvider } from "../context/ThemeContext";
 import { UserProvider } from "../context/UserContext";
 import { AuthProvider } from "../context/AuthContext";
+import NotificationManager from "../components/NotificationManager";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -24,10 +25,15 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="bg-[#fafafa] dark:bg-[#1a1b23]">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#1a1b23" />
+      </head>
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <ThemeProvider>
             <UserProvider>
+              <NotificationManager />
               <ClientLayout>{children}</ClientLayout>
             </UserProvider>
           </ThemeProvider>

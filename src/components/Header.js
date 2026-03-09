@@ -17,10 +17,23 @@ const Header = memo(function Header({ toggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [lastSeen, setLastSeen] = useState(0);
 
+  /* NOTIFICATION PERMISSION */
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   /* INITIALIZE LAST SEEN FROM LOCALSTORAGE */
   useEffect(() => {
     const saved = localStorage.getItem("lastSeenOrderTime");
     if (saved) setLastSeen(parseInt(saved));
+    else {
+      // First time, set to now to avoid back-filling old notifications
+      const now = Date.now();
+      setLastSeen(now);
+      localStorage.setItem("lastSeenOrderTime", now.toString());
+    }
   }, []);
 
   /* REAL-TIME ORDERS FOR NOTIFICATIONS */
@@ -35,6 +48,31 @@ const Header = memo(function Header({ toggleSidebar }) {
     if (!snapshot) return [];
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }, [snapshot]);
+
+  /* TRIGGER NOTIFICATION SOUND AND BROWSER NOTIFICATION */
+  useEffect(() => {
+    if (!notifications.length || lastSeen === 0) return;
+
+    const newestOrder = notifications[0];
+    const createdAt = newestOrder.createdAt?.toMillis() || 0;
+
+    if (createdAt > lastSeen) {
+      // Play sound
+      const audio = new Audio("/notification.mp3");
+      audio.play().catch(e => console.error("Audio play failed:", e));
+
+      // Browser Notification
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("🛒 New Order", {
+          body: `Order #${newestOrder.id.slice(0, 6).toUpperCase()}\nTotal: ${newestOrder.totals?.total || 0} EGP`,
+          icon: "/icons/sidebar-icon.svg",
+        });
+      }
+      
+      // We don't update lastSeen here because that would reset the counter.
+      // The counter logic in pendingCount handles it.
+    }
+  }, [notifications, lastSeen]);
 
   const pendingCount = useMemo(() => {
     return notifications.filter(n => {
