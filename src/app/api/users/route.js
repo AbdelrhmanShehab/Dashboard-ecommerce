@@ -36,8 +36,7 @@ export async function GET() {
         console.error("Error fetching users:", error);
         return NextResponse.json({
             error: "Failed to fetch users",
-            details: error.message,
-            stackPrefix: error.stack?.split("\n").slice(0, 2).join("\n")
+            details: "Administrative credentials might be missing or invalid."
         }, { status: 500 });
     }
 }

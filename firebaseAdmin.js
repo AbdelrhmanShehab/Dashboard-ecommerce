@@ -3,6 +3,12 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
 const initAdmin = () => {
+  // Defensive check for client-side usage
+  if (typeof window !== "undefined") {
+    console.error("Firebase Admin initialized on client-side! This is a security risk.");
+    return null;
+  }
+
   if (getApps().length > 0) return getApps()[0];
 
   const adminConfig = {
@@ -11,12 +17,19 @@ const initAdmin = () => {
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
   };
 
-  if (!adminConfig.projectId) {
-    console.warn("Missing Firebase Admin credentials!");
-    // Return dummy app or let it crash
+  if (!adminConfig.projectId || !adminConfig.clientEmail || !adminConfig.privateKey) {
+    console.error("❌ Firebase Admin credentials missing in .env.local!");
+    console.error("Checked for: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY");
+    // Throwing instead of warning to make it obvious in server logs
+    throw new Error("Missing Firebase Admin credentials. Check your .env.local file.");
   }
 
-  return initializeApp({ credential: cert(adminConfig) });
+  try {
+    return initializeApp({ credential: cert(adminConfig) });
+  } catch (error) {
+    console.error("❌ Firebase Admin initialization failed:", error.message);
+    throw error;
+  }
 };
 
 export const getAdminAuth = () => getAuth(initAdmin());

@@ -271,6 +271,81 @@ function DashboardContent() {
           </div>
         </div>
 
+        {/* REAL-TIME DETAILS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12 mb-12">
+
+          {/* LIVE NOW DETAILS */}
+          <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Live Now Details</h2>
+              <span className="flex items-center gap-2 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase tracking-widest">
+                <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse" />
+                {liveCount} Active
+              </span>
+            </div>
+            <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+              {liveSnap?.docs.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-10">No users online.</p>
+              ) : (
+                liveSnap?.docs.map(doc => (
+                  <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl dark:bg-gray-800/40">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs">👤</div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-[150px]">
+                          {doc.data().email || "Anonymous User"}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{doc.data().path}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">
+                      ID: {doc.data().sessionId?.slice(0, 6)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* ACTIVE CARTS DETAILS */}
+          <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Active Carts Details</h2>
+              <Link href="/leads" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full transition-colors">
+                View All Leads
+              </Link>
+            </div>
+            <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+              {leadsSnap?.docs.filter(d => d.data().status === 'pending' && d.data().lastActivity === 'cart').length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-10">No active carts.</p>
+              ) : (
+                leadsSnap?.docs
+                  .filter(d => d.data().status === 'pending' && d.data().lastActivity === 'cart')
+                  .sort((a, b) => (b.data().updatedAt?.toMillis() || 0) - (a.data().updatedAt?.toMillis() || 0))
+                  .map(doc => {
+                    const data = doc.data();
+                    return (
+                      <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl dark:bg-gray-800/40">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs">🛒</div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900 dark:text-white">{data.name || "Anonymous"}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{data.email}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] font-black bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                            Cart
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+
+        </div>
       </div>
     </main>
   );

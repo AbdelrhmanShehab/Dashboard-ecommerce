@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -60,6 +60,7 @@ const Icon = ({ name, className }) => {
     "bar-chart": <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />,
     "trending-up": <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />,
     "clipboard-list": <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />,
+    "bell": <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />,
   };
 
   return (
@@ -72,6 +73,30 @@ const Icon = ({ name, className }) => {
 const Sidebar = memo(function Sidebar({ visible, onClose }) {
   const pathname = usePathname();
   const { role, user } = useAuth();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  useEffect(() => {
+    const enabled = localStorage.getItem("notificationsEnabled") === "true";
+    setNotificationsEnabled(enabled);
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        const audio = new Audio("/notification.mp3");
+        audio.volume = 0;
+        try {
+          await audio.play();
+          audio.pause();
+          localStorage.setItem("notificationsEnabled", "true");
+          setNotificationsEnabled(true);
+        } catch (e) {
+          console.error("Audio unlock failed:", e);
+        }
+      }
+    }
+  };
 
   if (!user) return null;
 
@@ -137,6 +162,40 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
               </ul>
             </div>
           ))}
+
+          {/* NOTIFICATION TOGGLE */}
+          <div className="pt-4 mt-4 border-t border-gray-100 dark:border-gray-800">
+            <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4 dark:text-gray-500">
+              System
+            </h3>
+            <button
+              onClick={handleEnableNotifications}
+              disabled={notificationsEnabled}
+              className={`
+                w-full group relative flex items-center gap-3 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200
+                ${notificationsEnabled
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 cursor-default"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/40 dark:hover:text-white"
+                }
+              `}
+            >
+              <Icon
+                name="bell"
+                className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${notificationsEnabled ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`}
+              />
+              {notificationsEnabled ? "Notifications Ready" : "Enable Notifications"}
+              {notificationsEnabled && (
+                <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+            {!notificationsEnabled && (
+              <p className="px-4 mt-2 text-[10px] text-gray-400 leading-tight">
+                Required for sound and vibration on mobile.
+              </p>
+            )}
+          </div>
         </div>
       </nav>
     </aside>

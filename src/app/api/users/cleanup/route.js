@@ -35,7 +35,7 @@ export async function POST() {
         console.error("Error during cleanup:", error);
         return NextResponse.json({
             error: "Cleanup failed",
-            details: error.message
+            details: "Please check server logs for more information."
         }, { status: 500 });
     }
 }

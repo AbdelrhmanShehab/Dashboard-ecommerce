@@ -47,6 +47,22 @@ const Header = memo(function Header({ toggleSidebar }) {
     };
   }, []);
 
+  /* HELPER TO PLAY NOTIFICATION SOUND */
+  const playNotificationSound = () => {
+    const isEnabled = localStorage.getItem("notificationsEnabled") === "true";
+    if (!isEnabled) {
+      console.log("Notifications not enabled in settings");
+      return;
+    }
+
+    const audio = new Audio("/notification.mp3");
+    audio.play()
+      .then(() => console.log("Notification sound played successfully"))
+      .catch(e => {
+        console.warn("Notification sound play failed. User might need to click 'Enable Notifications' in sidebar.", e);
+      });
+  };
+
   /* INITIALIZE LAST SEEN FROM LOCALSTORAGE */
   useEffect(() => {
     const saved = localStorage.getItem("lastSeenOrderTime");
@@ -84,14 +100,12 @@ const Header = memo(function Header({ toggleSidebar }) {
     const createdAt = newestOrder.createdAt?.toMillis() || 0;
 
     if (createdAt > lastSeen) {
-      // Play sound
-      const audio = new Audio("/notification.mp3");
-      audio.play().catch(e => {
-        console.warn("Audio play failed, likely due to browser restrictions:", e);
-      });
+      // Play sound via helper
+      playNotificationSound();
 
       // Browser Notification
-      if ("Notification" in window && Notification.permission === "granted") {
+      const isEnabled = localStorage.getItem("notificationsEnabled") === "true";
+      if (isEnabled && "Notification" in window && Notification.permission === "granted") {
         try {
           const notification = new Notification("🛒 New Order", {
             body: `Order #${newestOrder.id.slice(0, 6).toUpperCase()}\nTotal: ${newestOrder.totals?.total || 0} EGP`,

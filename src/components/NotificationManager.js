@@ -13,15 +13,24 @@ export default function NotificationManager() {
           console.log("Service Worker registered with scope:", registration.scope);
 
           if (messaging) {
-            const token = await getToken(messaging, {
-              vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-              serviceWorkerRegistration: registration,
-            });
-            if (token) {
-              console.log("FCM Token:", token);
-              // In a real app, you'd send this token to your server to associate it with the user
+            if (Notification.permission === "granted") {
+              try {
+                const token = await getToken(messaging, {
+                  vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+                  serviceWorkerRegistration: registration,
+                });
+                if (token) {
+                  console.log("FCM Token:", token);
+                } else {
+                  console.log("No registration token available.");
+                }
+              } catch (tokenError) {
+                console.error("Error retrieving FCM token:", tokenError);
+              }
+            } else if (Notification.permission === "denied") {
+              console.warn("Notifications are blocked by the user.");
             } else {
-              console.log("No registration token available. Request permission to generate one.");
+              console.log("Notification permission not yet requested.");
             }
           }
         } catch (err) {
