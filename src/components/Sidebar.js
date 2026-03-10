@@ -96,9 +96,9 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
       localStorage.setItem("notificationsEnabled", "true");
       setNotificationsEnabled(true);
       if (isUnlocked) {
-        alert("✅ Notifications & Sound are ACTIVE!");
+        console.log("✅ Notifications & Sound are ACTIVE!");
       } else {
-        alert("Notifications permitted! Please click anywhere on the page once to fully activate the sound engine.");
+        console.log("Notifications permitted! Awaiting interaction to unlock audio.");
       }
       return;
     }
@@ -109,9 +109,9 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
       if (permission === "granted") {
         localStorage.setItem("notificationsEnabled", "true");
         setNotificationsEnabled(true);
-        alert("✅ Notifications Enabled! Sound will activate on your next click.");
+        console.log("✅ Notifications Enabled! Sound will activate on next click.");
       } else if (permission === "denied") {
-        alert("🚫 Notifications blocked. Please allow them in settings.");
+        console.warn("🚫 Notifications blocked by user.");
       }
     } catch (err) {
       console.error("Error enable notifications:", err);
