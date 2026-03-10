@@ -83,43 +83,35 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
   const handleEnableNotifications = async () => {
     console.log("🔔 Notification button clicked");
     
+    // Check if system-wide audio is unlocked (set by Header.js)
+    const isUnlocked = typeof window !== "undefined" && window.isAudioUnlocked;
+
     if (!("Notification" in window)) {
       alert("Desktop notifications are not supported in this browser.");
       return;
     }
 
-    // If already granted, we just need to unlock audio
+    // Always try to toggle state if permission is already granted
     if (Notification.permission === "granted") {
-      const audio = new Audio("/notification.mp3");
-      try {
-        await audio.play();
-        localStorage.setItem("notificationsEnabled", "true");
-        setNotificationsEnabled(true);
-        alert("✅ Sound & Notifications are now ACTIVE!");
-      } catch (e) {
-        console.error("Audio playback failed:", e);
-        alert("Audio playback was blocked. Please try clicking the button one more time.");
+      localStorage.setItem("notificationsEnabled", "true");
+      setNotificationsEnabled(true);
+      if (isUnlocked) {
+        alert("✅ Notifications & Sound are ACTIVE!");
+      } else {
+        alert("Notifications permitted! Please click anywhere on the page once to fully activate the sound engine.");
       }
       return;
     }
 
-    // Otherwise, request permission first
+    // Otherwise request permission
     try {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
-        // After permission is granted, some browsers kill the current click gesture context.
-        // We try to play, but if it fails, we tell them to click once more.
-        const audio = new Audio("/notification.mp3");
-        try {
-          await audio.play();
-          localStorage.setItem("notificationsEnabled", "true");
-          setNotificationsEnabled(true);
-          alert("✅ Notifications & Sound Enabled!");
-        } catch (e) {
-          alert("Permission granted! Now click 'Enable Notifications' one last time to activate the ringtone.");
-        }
+        localStorage.setItem("notificationsEnabled", "true");
+        setNotificationsEnabled(true);
+        alert("✅ Notifications Enabled! Sound will activate on your next click.");
       } else if (permission === "denied") {
-        alert("🚫 Notification permission denied. Please enable them in your browser settings.");
+        alert("🚫 Notifications blocked. Please allow them in settings.");
       }
     } catch (err) {
       console.error("Error enable notifications:", err);

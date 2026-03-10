@@ -18,34 +18,36 @@ const Header = memo(function Header({ toggleSidebar }) {
   const [lastSeen, setLastSeen] = useState(0);
 
   /* NOTIFICATION PERMISSION AND AUDIO UNLOCK */
-  /* NOTIFICATION PERMISSION AND AUDIO UNLOCK */
   useEffect(() => {
-    // Mobile browsers require a user interaction to play audio.
-    // We "unlock" the audio by playing/pausing a short snippet once on first interaction.
-    const unlockAudio = () => {
-      console.log("Attempting to unlock audio context...");
-      const audio = new Audio("/notification.mp3");
-      // Setting a very low volume to avoid startling the user on first click
-      audio.volume = 0.01; 
+    const unlockAudio = async () => {
+      // 1. Unlock HTML built-in audio
+      const silentAudio = new Audio("/notification.mp3");
+      silentAudio.volume = 0;
       
-      audio.play()
-        .then(() => {
-          setTimeout(() => {
-            audio.pause();
-            audio.currentTime = 0;
-            console.log("✅ Audio successfully unlocked for this session.");
-          }, 100);
-          
-          window.removeEventListener("click", unlockAudio, true);
-          window.removeEventListener("touchstart", unlockAudio, true);
-        })
-        .catch(e => {
-          // If it fails, we keep the listeners to try again on next click
-          console.warn("Audio unlock pending (need user gesture):", e.message);
-        });
+      // 2. Unlock Web Audio API
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        if (ctx.state === "suspended") {
+          await ctx.resume().catch(() => {});
+        }
+      }
+
+      try {
+        await silentAudio.play();
+        silentAudio.pause();
+        
+        // SET GLOBAL FLAG
+        window.isAudioUnlocked = true;
+        console.log("✅ Audio Engine Unlocked.");
+        
+        window.removeEventListener("click", unlockAudio, true);
+        window.removeEventListener("touchstart", unlockAudio, true);
+      } catch (e) {
+        // Keep listening
+      }
     };
 
-    // Use capture phase to ensure it runs before navigation or other handlers
     window.addEventListener("click", unlockAudio, true);
     window.addEventListener("touchstart", unlockAudio, true);
 
