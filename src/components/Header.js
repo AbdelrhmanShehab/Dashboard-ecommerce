@@ -16,6 +16,7 @@ const Header = memo(function Header({ toggleSidebar }) {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [lastSeen, setLastSeen] = useState(0);
+  const [toast, setToast] = useState(null);
 
   /* NOTIFICATION PERMISSION AND AUDIO UNLOCK */
   useEffect(() => {
@@ -115,20 +116,31 @@ const Header = memo(function Header({ toggleSidebar }) {
 
       // Browser Notification
       const isEnabled = localStorage.getItem("notificationsEnabled") === "true";
-      if (isEnabled && "Notification" in window && Notification.permission === "granted") {
-        try {
-          const notification = new Notification("🛒 New Order", {
-            body: `Order #${newestOrder.id.slice(0, 6).toUpperCase()}\nTotal: ${newestOrder.totals?.total || 0} EGP`,
-            icon: "/icons/sidebar-icon.svg",
-            silent: false, // Ensure it's not silent
-          });
+      if (isEnabled) {
+        // 1. Show In-App Toast (Reliable for mobile foreground)
+        setToast({
+          id: newestOrder.id,
+          title: "🛒 New Order",
+          body: `Order #${newestOrder.id.slice(0, 6).toUpperCase()} — ${newestOrder.totals?.total || 0} EGP`
+        });
+        // Auto-dismiss toast after 6 seconds
+        setTimeout(() => setToast(null), 6000);
 
-          notification.onclick = () => {
-            window.focus();
-            router.push("/orders");
-          };
-        } catch (e) {
-          console.error("Browser notification failed:", e);
+        // 2. Try System Notification (Reliable for Desktop)
+        if ("Notification" in window && Notification.permission === "granted") {
+          try {
+            const n = new Notification("🛒 New Order", {
+              body: `Order #${newestOrder.id.slice(0, 6).toUpperCase()}\nTotal: ${newestOrder.totals?.total || 0} EGP`,
+              icon: "/icon-192.png",
+              silent: false,
+            });
+            n.onclick = () => {
+              window.focus();
+              router.push("/orders");
+            };
+          } catch (e) {
+            console.error("Browser notification failed:", e);
+          }
         }
       }
       
@@ -277,6 +289,38 @@ const Header = memo(function Header({ toggleSidebar }) {
           )}
         </div>
       </div>
+
+      {/* MOBILE FRIENDLY TOAST */}
+      {toast && (
+        <div 
+          onClick={() => {
+            router.push("/orders");
+            setToast(null);
+          }}
+          className="fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-white dark:bg-[#1a1b23] border border-indigo-100 dark:border-indigo-900/50 shadow-2xl rounded-2xl p-4 z-[9999] flex items-center gap-4 animate-in slide-in-from-top-4 duration-300 cursor-pointer hover:scale-[1.02] transition-transform"
+        >
+          <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg className="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{toast.title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{toast.body}</p>
+          </div>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setToast(null);
+            }}
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+          >
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
     </header>
   );
 });

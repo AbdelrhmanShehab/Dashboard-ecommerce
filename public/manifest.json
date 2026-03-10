@@ -15,7 +15,7 @@
     {
       "src": "/icons/sidebar-icon.svg",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
     }
   ]
 }
