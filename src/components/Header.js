@@ -17,11 +17,34 @@ const Header = memo(function Header({ toggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [lastSeen, setLastSeen] = useState(0);
 
-  /* NOTIFICATION PERMISSION */
+  /* NOTIFICATION PERMISSION AND AUDIO UNLOCK */
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
+
+    // Mobile browsers require a user interaction to play audio.
+    // We "unlock" the audio by playing/pausing a silent or short snippet once.
+    const unlockAudio = () => {
+      const audio = new Audio("/notification.mp3");
+      audio.volume = 0;
+      audio.play()
+        .then(() => {
+          audio.pause();
+          console.log("Audio unlocked");
+          window.removeEventListener("click", unlockAudio);
+          window.removeEventListener("touchstart", unlockAudio);
+        })
+        .catch(e => console.error("Audio unlock failed:", e));
+    };
+
+    window.addEventListener("click", unlockAudio);
+    window.addEventListener("touchstart", unlockAudio);
+
+    return () => {
+      window.removeEventListener("click", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+    };
   }, []);
 
   /* INITIALIZE LAST SEEN FROM LOCALSTORAGE */
@@ -63,14 +86,26 @@ const Header = memo(function Header({ toggleSidebar }) {
     if (createdAt > lastSeen) {
       // Play sound
       const audio = new Audio("/notification.mp3");
-      audio.play().catch(e => console.error("Audio play failed:", e));
+      audio.play().catch(e => {
+        console.warn("Audio play failed, likely due to browser restrictions:", e);
+      });
 
       // Browser Notification
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("🛒 New Order", {
-          body: `Order #${newestOrder.id.slice(0, 6).toUpperCase()}\nTotal: ${newestOrder.totals?.total || 0} EGP`,
-          icon: "/icons/sidebar-icon.svg",
-        });
+        try {
+          const notification = new Notification("🛒 New Order", {
+            body: `Order #${newestOrder.id.slice(0, 6).toUpperCase()}\nTotal: ${newestOrder.totals?.total || 0} EGP`,
+            icon: "/icons/sidebar-icon.svg",
+            silent: false, // Ensure it's not silent
+          });
+
+          notification.onclick = () => {
+            window.focus();
+            router.push("/orders");
+          };
+        } catch (e) {
+          console.error("Browser notification failed:", e);
+        }
       }
       
       // We don't update lastSeen here because that would reset the counter.

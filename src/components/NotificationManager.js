@@ -14,7 +14,7 @@ export default function NotificationManager() {
 
           if (messaging) {
             const token = await getToken(messaging, {
-              vapidKey: "BKe1M_Y6_I8T_9_J-v6z6z6z6z6z6z6z6z6z6z6z6z6z6z6z6z6z6z6z6z6z6z", // Placeholder VAPID key
+              vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
               serviceWorkerRegistration: registration,
             });
             if (token) {

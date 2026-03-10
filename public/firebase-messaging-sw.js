@@ -18,7 +18,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationOptions = {
     body: payload.notification.body,
     icon: '/icons/sidebar-icon.svg',
-    vibrate: [200, 100, 200],
+    vibrate: [200, 100, 200, 100, 400],
+    sound: '/notification.mp3', // Supported by some mobile browsers/OS
     tag: 'order-notification',
     data: {
       url: '/'
