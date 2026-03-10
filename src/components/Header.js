@@ -18,32 +18,40 @@ const Header = memo(function Header({ toggleSidebar }) {
   const [lastSeen, setLastSeen] = useState(0);
 
   /* NOTIFICATION PERMISSION AND AUDIO UNLOCK */
+  /* NOTIFICATION PERMISSION AND AUDIO UNLOCK */
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-
     // Mobile browsers require a user interaction to play audio.
-    // We "unlock" the audio by playing/pausing a silent or short snippet once.
+    // We "unlock" the audio by playing/pausing a short snippet once on first interaction.
     const unlockAudio = () => {
+      console.log("Attempting to unlock audio context...");
       const audio = new Audio("/notification.mp3");
-      audio.volume = 0;
+      // Setting a very low volume to avoid startling the user on first click
+      audio.volume = 0.01; 
+      
       audio.play()
         .then(() => {
-          audio.pause();
-          console.log("Audio unlocked");
-          window.removeEventListener("click", unlockAudio);
-          window.removeEventListener("touchstart", unlockAudio);
+          setTimeout(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            console.log("✅ Audio successfully unlocked for this session.");
+          }, 100);
+          
+          window.removeEventListener("click", unlockAudio, true);
+          window.removeEventListener("touchstart", unlockAudio, true);
         })
-        .catch(e => console.error("Audio unlock failed:", e));
+        .catch(e => {
+          // If it fails, we keep the listeners to try again on next click
+          console.warn("Audio unlock pending (need user gesture):", e.message);
+        });
     };
 
-    window.addEventListener("click", unlockAudio);
-    window.addEventListener("touchstart", unlockAudio);
+    // Use capture phase to ensure it runs before navigation or other handlers
+    window.addEventListener("click", unlockAudio, true);
+    window.addEventListener("touchstart", unlockAudio, true);
 
     return () => {
-      window.removeEventListener("click", unlockAudio);
-      window.removeEventListener("touchstart", unlockAudio);
+      window.removeEventListener("click", unlockAudio, true);
+      window.removeEventListener("touchstart", unlockAudio, true);
     };
   }, []);
 

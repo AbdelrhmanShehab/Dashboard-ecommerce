@@ -81,20 +81,48 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
   }, []);
 
   const handleEnableNotifications = async () => {
-    if ("Notification" in window) {
+    console.log("🔔 Notification button clicked");
+    
+    if (!("Notification" in window)) {
+      alert("Desktop notifications are not supported in this browser.");
+      return;
+    }
+
+    // If already granted, we just need to unlock audio
+    if (Notification.permission === "granted") {
+      const audio = new Audio("/notification.mp3");
+      try {
+        await audio.play();
+        localStorage.setItem("notificationsEnabled", "true");
+        setNotificationsEnabled(true);
+        alert("✅ Sound & Notifications are now ACTIVE!");
+      } catch (e) {
+        console.error("Audio playback failed:", e);
+        alert("Audio playback was blocked. Please try clicking the button one more time.");
+      }
+      return;
+    }
+
+    // Otherwise, request permission first
+    try {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
+        // After permission is granted, some browsers kill the current click gesture context.
+        // We try to play, but if it fails, we tell them to click once more.
         const audio = new Audio("/notification.mp3");
-        audio.volume = 0;
         try {
           await audio.play();
-          audio.pause();
           localStorage.setItem("notificationsEnabled", "true");
           setNotificationsEnabled(true);
+          alert("✅ Notifications & Sound Enabled!");
         } catch (e) {
-          console.error("Audio unlock failed:", e);
+          alert("Permission granted! Now click 'Enable Notifications' one last time to activate the ringtone.");
         }
+      } else if (permission === "denied") {
+        alert("🚫 Notification permission denied. Please enable them in your browser settings.");
       }
+    } catch (err) {
+      console.error("Error enable notifications:", err);
     }
   };
 
@@ -169,12 +197,12 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
               System
             </h3>
             <button
+              type="button"
               onClick={handleEnableNotifications}
-              disabled={notificationsEnabled}
               className={`
                 w-full group relative flex items-center gap-3 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200
                 ${notificationsEnabled
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 cursor-default"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 cursor-pointer"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/40 dark:hover:text-white"
                 }
               `}

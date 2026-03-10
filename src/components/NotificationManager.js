@@ -12,25 +12,19 @@ export default function NotificationManager() {
           const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
           console.log("Service Worker registered with scope:", registration.scope);
 
-          if (messaging) {
-            if (Notification.permission === "granted") {
-              try {
-                const token = await getToken(messaging, {
-                  vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-                  serviceWorkerRegistration: registration,
-                });
-                if (token) {
-                  console.log("FCM Token:", token);
-                } else {
-                  console.log("No registration token available.");
-                }
-              } catch (tokenError) {
-                console.error("Error retrieving FCM token:", tokenError);
+          if (messaging && Notification.permission === "granted") {
+            try {
+              const token = await getToken(messaging, {
+                vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+                serviceWorkerRegistration: registration,
+              });
+              if (token) {
+                console.log("FCM Token:", token);
+              } else {
+                console.log("No registration token available.");
               }
-            } else if (Notification.permission === "denied") {
-              console.warn("Notifications are blocked by the user.");
-            } else {
-              console.log("Notification permission not yet requested.");
+            } catch (tokenError) {
+              console.error("Error retrieving FCM token:", tokenError);
             }
           }
         } catch (err) {
