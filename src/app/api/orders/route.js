@@ -25,6 +25,24 @@ export async function POST(request) {
       console.error('📧 [API/Orders] Failed to send confirmation email:', emailError);
     }
 
+    // Clear leads for this customer and products
+    const email = orderData.customer?.email;
+    if (email) {
+      try {
+        const items = orderData.items || [];
+        for (const item of items) {
+          if (item.productId) {
+            await db.collection('leads').doc(`${email}_${item.productId}`).set({
+              status: 'converted',
+              updatedAt: new Date()
+            }, { merge: true });
+          }
+        }
+      } catch (leadError) {
+        console.error('❌ [API/Orders] Failed to clear leads:', leadError);
+      }
+    }
+
     return NextResponse.json({
       message: 'Order created successfully',
       orderId: orderId
@@ -108,6 +126,26 @@ export async function PATCH(request) {
 
       updates.status = status;
       messages.push(`Status updated to ${status}`);
+
+      // If order is confirmed, clear related leads
+      if (status === 'confirmed') {
+        const email = orderData.customer?.email;
+        if (email) {
+          try {
+            const items = orderData.items || [];
+            for (const item of items) {
+              if (item.productId) {
+                await db.collection('leads').doc(`${email}_${item.productId}`).set({
+                  status: 'converted',
+                  updatedAt: new Date()
+                }, { merge: true });
+              }
+            }
+          } catch (leadError) {
+            console.error('❌ [API/Orders] Failed to clear leads on confirmation:', leadError);
+          }
+        }
+      }
     }
 
     // Handle Payment Update
