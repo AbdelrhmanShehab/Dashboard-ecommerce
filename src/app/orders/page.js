@@ -97,8 +97,8 @@ function OrdersContent() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update status");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server returned ${response.status}`);
       }
 
       // Update local state if modal is open
@@ -107,7 +107,7 @@ function OrdersContent() {
       }
     } catch (error) {
       console.error("❌ Error updating status:", error);
-      alert("Failed to update order status. Please try again.");
+      alert(`Error updating order status: ${error.message}`);
     }
   };
 
@@ -134,8 +134,8 @@ function OrdersContent() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update payment");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server returned ${response.status}`);
       }
 
       if (selectedOrder?.id === order.id) {
@@ -147,7 +147,7 @@ function OrdersContent() {
       }
     } catch (error) {
       console.error("❌ Error updating payment:", error);
-      alert("Failed to update payment. Please try again.");
+      alert(`Error updating payment: ${error.message}`);
     }
   };
 
@@ -223,7 +223,9 @@ function OrdersContent() {
                   <tr
                     key={order.id}
                     onClick={() => setSelectedOrder(order)}
-                    className="group hover:bg-gray-50/80 cursor-pointer transition-colors dark:hover:bg-gray-800"
+                    className={`group hover:bg-gray-50/80 cursor-pointer transition-colors dark:hover:bg-gray-800 ${
+                      (order.status === 'cancelled' || order.status === 'payment_rejected') ? 'opacity-60 bg-gray-50/30' : ''
+                    }`}
                   >
                     <td className="p-4">
                       <span className="font-medium text-gray-900 text-sm">#{order.id.slice(0, 6).toUpperCase()}</span>
@@ -296,6 +298,8 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
     }
   };
 
+  const isCancelled = order.status === "cancelled" || order.status === "payment_rejected";
+
   const timelineSteps = [
     { id: "pending", label: "Pending", icon: "🕒" },
     { id: "confirmed", label: "Confirmed", icon: "📄" },
@@ -327,27 +331,39 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
         <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar">
 
           {/* STEPPER / TIMELINE */}
-          <div className="mb-6 md:mb-10 px-0 sm:px-4">
-            <div className="flex items-center justify-between relative">
-              {/* Connector Line */}
-              <div className="absolute top-4 sm:top-5 left-0 w-full h-0.5 bg-gray-100 -z-10"></div>
-              <div className="absolute top-4 sm:top-5 left-0 h-0.5 bg-emerald-500 transition-all duration-500 -z-10" style={{ width: `${(currentStepIndex / (timelineSteps.length - 1)) * 100}%` }}></div>
- 
-              {timelineSteps.map((step, idx) => (
-                <div key={step.id} className="flex flex-col items-center">
-                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 sm:border-4 transition-all duration-300 ${idx <= currentStepIndex
-                    ? "bg-white border-emerald-500 text-sm sm:text-lg"
-                    : "bg-white border-gray-100 text-sm sm:text-lg opacity-40"
-                    }`}>
-                    {step.icon}
+          {!isCancelled ? (
+            <div className="mb-6 md:mb-10 px-0 sm:px-4">
+              <div className="flex items-center justify-between relative">
+                {/* Connector Line */}
+                <div className="absolute top-4 sm:top-5 left-0 w-full h-0.5 bg-gray-100 -z-10"></div>
+                <div className="absolute top-4 sm:top-5 left-0 h-0.5 bg-emerald-500 transition-all duration-500 -z-10" style={{ width: `${(currentStepIndex / (timelineSteps.length - 1)) * 100}%` }}></div>
+  
+                {timelineSteps.map((step, idx) => (
+                  <div key={step.id} className="flex flex-col items-center">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 sm:border-4 transition-all duration-300 ${idx <= currentStepIndex
+                      ? "bg-white border-emerald-500 text-sm sm:text-lg"
+                      : "bg-white border-gray-100 text-sm sm:text-lg opacity-40"
+                      }`}>
+                      {step.icon}
+                    </div>
+                    <span className={`text-[9px] sm:text-xs font-bold mt-2 uppercase tracking-tight text-center ${idx <= currentStepIndex ? "text-gray-900 dark:text-white" : "text-gray-300 dark:text-gray-700"}`}>
+                      {step.label}
+                    </span>
                   </div>
-                  <span className={`text-[9px] sm:text-xs font-bold mt-2 uppercase tracking-tight text-center ${idx <= currentStepIndex ? "text-gray-900 dark:text-white" : "text-gray-300 dark:text-gray-700"}`}>
-                    {step.label}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-6 md:mb-10 px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl flex items-center gap-4 dark:bg-rose-900/20 dark:border-rose-900/50">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-sm dark:bg-rose-900">
+                🚫
+              </div>
+              <div>
+                <h4 className="text-rose-700 font-bold dark:text-rose-300 uppercase tracking-wider text-sm">Order {order.status.replace('_', ' ')}</h4>
+                <p className="text-rose-600/80 text-xs dark:text-rose-400/80">This order has been terminated and will not proceed further.</p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* LEFT COLUMN: INFO */}
@@ -411,7 +427,7 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
               <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Order items</h3>
               <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-50 dark:border-gray-800 dark:divide-gray-800">
                 {order.items.map((item, i) => (
-                  <div key={i} className="p-4 flex items-center gap-4 bg-white hover:bg-gray-50/50 transition-colors dark:bg-[#1a1b23] dark:hover:bg-gray-800">
+                  <div key={i} className={`p-4 flex items-center gap-4 bg-white hover:bg-gray-50/50 transition-colors dark:bg-[#1a1b23] dark:hover:bg-gray-800 ${isCancelled ? 'opacity-70' : ''}`}>
                     <div className="relative w-14 h-14 bg-gray-50 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
                       {item.image || (item.images && item.images[0]) ? (
                         <Image
@@ -428,7 +444,7 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate dark:text-white">{item.title}</p>
+                      <p className={`text-sm font-bold text-gray-900 truncate dark:text-white ${isCancelled ? 'line-through decoration-rose-500/50' : ''}`}>{item.title}</p>
                       <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">{item.variant}</p>
                     </div>
                     <div className="text-right">

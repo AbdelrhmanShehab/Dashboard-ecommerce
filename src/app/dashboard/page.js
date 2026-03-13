@@ -107,7 +107,12 @@ function DashboardContent() {
 
   /* ---------------- METRICS (memoized) ---------------- */
   const revenue = ordersSnap?.docs.reduce(
-    (sum, doc) => sum + (doc.data().totals?.total || 0),
+    (sum, doc) => {
+      const data = doc.data();
+      // Only count non-cancelled/rejected orders in revenue
+      if (data.status === 'cancelled' || data.status === 'payment_rejected') return sum;
+      return sum + (data.totals?.total || 0);
+    },
     0
   ) ?? 0;
 
@@ -254,7 +259,9 @@ function DashboardContent() {
               return (
                 <div
                   key={doc.id}
-                  className="group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer dark:hover:bg-gray-800 dark:hover:border-gray-700"
+                  className={`group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer dark:hover:bg-gray-800 dark:hover:border-gray-700 ${
+                    (data.status === 'cancelled' || data.status === 'payment_rejected') ? 'opacity-50 grayscale-[0.5]' : ''
+                  }`}
                   onClick={() => router.push(`/orders`)}
                 >
                   <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 text-lg group-hover:bg-white transition-colors">

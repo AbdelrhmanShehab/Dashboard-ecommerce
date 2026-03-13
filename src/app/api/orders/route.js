@@ -60,10 +60,12 @@ export async function PATCH(request) {
     if (status && status !== orderData.status) {
       // STOCK LOGIC: IF ANY -> CANCELLED
       if (status === "cancelled" && orderData.status !== "cancelled") {
-        for (const item of orderData.items) {
+        const items = orderData.items || [];
+        for (const item of items) {
+          if (!item.productId || !item.variantId) continue;
           const productRef = db.collection('products').doc(item.productId);
-          const productSnap = await productRef.get();
-          if (productSnap.exists) {
+          const productSnap = await productRef.get().catch(() => null);
+          if (productSnap && productSnap.exists) {
             const product = productSnap.data();
             const variants = product.variants || [];
             const updatedVariants = variants.map((v) => {
@@ -75,17 +77,19 @@ export async function PATCH(request) {
             await productRef.update({
               variants: updatedVariants,
               totalStock: updatedVariants.reduce((sum, v) => sum + (v.stock || 0), 0)
-            });
+            }).catch(err => console.error(`Failed to update stock for product ${item.productId}:`, err));
           }
         }
       }
 
       // STOCK LOGIC: IF CANCELLED -> ANY (EXCEPT CANCELLED)
       if (orderData.status === "cancelled" && status !== "cancelled") {
-        for (const item of orderData.items) {
+        const items = orderData.items || [];
+        for (const item of items) {
+          if (!item.productId || !item.variantId) continue;
           const productRef = db.collection('products').doc(item.productId);
-          const productSnap = await productRef.get();
-          if (productSnap.exists) {
+          const productSnap = await productRef.get().catch(() => null);
+          if (productSnap && productSnap.exists) {
             const product = productSnap.data();
             const variants = product.variants || [];
             const updatedVariants = variants.map((v) => {
@@ -97,7 +101,7 @@ export async function PATCH(request) {
             await productRef.update({
               variants: updatedVariants,
               totalStock: updatedVariants.reduce((sum, v) => sum + (v.stock || 0), 0)
-            });
+            }).catch(err => console.error(`Failed to update stock for product ${item.productId}:`, err));
           }
         }
       }

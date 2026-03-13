@@ -30,12 +30,17 @@ const createTransporter = () => {
 };
 
 const generateOrderHTML = (order, isCustomer = false, statusUpdate = false) => {
-  const { id, items, totals, delivery, payment, status } = order;
-  const orderId = id ? id.slice(0, 8).toUpperCase() : "UNKNOWN";
+  const { id = "", items = [], totals = {}, delivery = {}, payment = {}, status = "pending" } = order;
+  const orderId = String(id).slice(0, 8).toUpperCase() || "UNKNOWN";
   const total = totals?.total || 0;
 
   let statusMessage = isCustomer ? 'Thank you for your order!' : '🎉 New Order Received';
-  if (statusUpdate) {
+  
+  if (status === 'cancelled') {
+    statusMessage = isCustomer ? 'Important: Your Order has been Cancelled' : `Order #${orderId} was Cancelled`;
+  } else if (status === 'payment_rejected') {
+    statusMessage = isCustomer ? 'Action Required: Payment Not Approved' : `Order #${orderId} payment rejected`;
+  } else if (statusUpdate) {
     if (status === 'confirmed') {
       statusMessage = isCustomer ? 'Your order has been confirmed!' : `Order #${orderId} confirmed`;
     } else if (status === 'shipped') {
@@ -44,10 +49,6 @@ const generateOrderHTML = (order, isCustomer = false, statusUpdate = false) => {
       statusMessage = isCustomer ? 'Your order has been delivered!' : `Order #${orderId} delivered`;
     } else if (status === 'payment_confirmed') {
       statusMessage = isCustomer ? 'Payment Confirmed! Your order is being processed.' : `Order #${orderId} payment confirmed`;
-    } else if (status === 'payment_rejected') {
-      statusMessage = isCustomer ? 'Payment Not Approved' : `Order #${orderId} payment rejected`;
-    } else if (status === 'cancelled') {
-      statusMessage = isCustomer ? 'Order Cancelled' : `Order #${orderId} cancelled`;
     }
   }
 
@@ -58,7 +59,9 @@ const generateOrderHTML = (order, isCustomer = false, statusUpdate = false) => {
     </div>
   ` : '';
 
-  const headerColor = (status === 'cancelled' || status === 'payment_rejected') ? '#e53e3e' : '#1a1b23';
+  const isCancelled = status === 'cancelled' || status === 'payment_rejected';
+  const headerColor = isCancelled ? '#e53e3e' : '#1a1b23';
+  const headerBg = isCancelled ? '#fff5f5' : '#ffffff';
 
   return `
     <!DOCTYPE html>
@@ -66,24 +69,26 @@ const generateOrderHTML = (order, isCustomer = false, statusUpdate = false) => {
       <head>
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
-          .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid ${headerColor}; }
-          .header h1 { color: ${headerColor}; margin: 0; }
-          .order-summary { margin: 20px 0; background: #f9f9f9; padding: 15px; border-radius: 8px; }
-          .item { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dotted #ccc; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; background-color: ${isCancelled ? '#fafafa' : '#ffffff'}; }
+          .header { text-align: center; padding: 30px 20px; border-bottom: 2px solid ${headerColor}; background-color: ${headerBg}; border-radius: 10px 10px 0 0; }
+          .header h1 { color: ${headerColor}; margin: 0; font-size: 24px; }
+          .status-message { font-size: 18px; font-weight: bold; color: ${headerColor}; margin: 10px 0; }
+          .order-summary { margin: 20px 0; background: ${isCancelled ? '#f0f0f0' : '#f9f9f9'}; padding: 15px; border-radius: 8px; opacity: ${isCancelled ? '0.8' : '1'}; }
+          .item { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dotted #ccc; color: ${isCancelled ? '#777' : '#333'}; }
+          .item-title { text-decoration: ${isCancelled ? 'line-through' : 'none'}; }
           .total { font-size: 1.2em; font-weight: bold; color: ${headerColor}; text-align: right; margin-top: 15px; }
-          .details { margin-top: 20px; font-size: 0.9em; }
+          .details { margin-top: 20px; font-size: 0.9em; color: ${isCancelled ? '#666' : '#333'}; }
           .footer { text-align: center; margin-top: 30px; font-size: 0.8em; color: #777; }
-          .btn { display: inline-block; padding: 10px 20px; background: ${headerColor}; color: #fff !important; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-          .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; background: ${(status === 'cancelled' || status === 'payment_rejected') ? '#fff5f5' : '#f3e8ff'}; color: ${headerColor}; }
+          .btn { display: inline-block; padding: 12px 25px; background: ${headerColor}; color: #fff !important; text-decoration: none; border-radius: 8px; margin-top: 20px; font-weight: bold; }
+          .status-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; background: ${isCancelled ? '#e53e3e' : '#f3e8ff'}; color: ${isCancelled ? '#ffffff' : '#1a1b23'}; border: 1px solid ${isCancelled ? '#e53e3e' : '#e9d5ff'}; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
             <h1>Hedoomyy Store</h1>
-            <p>${statusMessage}</p>
-            <div class="status-badge">${status ? status.replace('_', ' ') : "pending"}</div>
+            <div class="status-message">${statusMessage}</div>
+            <div class="status-badge">${String(status || 'pending').replace('_', ' ')}</div>
           </div>
           
           ${reasonHtml}
@@ -92,7 +97,7 @@ const generateOrderHTML = (order, isCustomer = false, statusUpdate = false) => {
             <h3>Order ID: #${orderId}</h3>
             ${(items || []).map((i) => `
               <div class="item">
-                <span>${i.title} (${i.color} / ${i.size}) x${i.qty}</span>
+                <span class="item-title">${i.title} (${i.color} / ${i.size}) x${i.qty}</span>
                 <span>${i.price * i.qty} EGP</span>
               </div>
             `).join('')}
@@ -190,13 +195,7 @@ export const sendOrderStatusUpdateEmail = async (order) => {
     return;
   }
 
-  try {
-    console.log("📧 [EmailService] Verifying SMTP connection for status update...");
-    await transporter.verify();
-  } catch (verifyError) {
-    console.error("❌ [EmailService] SMTP Verification failed for status update:", verifyError.message);
-    return;
-  }
+  // transporter.verify() is removed to prevent timeouts on severless environments
 
   const orderId = order.id ? order.id.slice(0, 6).toUpperCase() : "UNK";
   const customerEmail = order.customer?.email;
