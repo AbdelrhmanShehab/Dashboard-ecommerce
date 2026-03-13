@@ -23,6 +23,7 @@ export default function DashboardPage() {
 function DashboardContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   // KPI counts fetched via aggregation (cheap single reads)
   const [totalProducts, setTotalProducts] = useState(0);
@@ -137,8 +138,21 @@ function DashboardContent() {
         <DashboardCard title="Products" value={totalProducts} />
         <DashboardCard title="Orders" value={totalOrders} />
         <DashboardCard title="Revenue" value={`${revenue.toLocaleString()} EGP`} />
-        <DashboardCard title="Low Stock" value={lowStockCount} />
+        <DashboardCard 
+          title="Low Stock" 
+          value={lowStockCount} 
+          onClick={() => setShowLowStockModal(true)}
+          className="cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition-colors"
+        />
       </div>
+
+      {/* LOW STOCK MODAL */}
+      {showLowStockModal && (
+        <LowStockModal 
+          products={productsSnap?.docs || []} 
+          onClose={() => setShowLowStockModal(false)} 
+        />
+      )}
 
       {/* RECENT SECTIONS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
@@ -352,10 +366,13 @@ function DashboardContent() {
 }
 
 /* ---------------- REUSABLE CARD (memoized) ---------------- */
-const DashboardCard = memo(function DashboardCard({ title, value, highlighted }) {
+const DashboardCard = memo(function DashboardCard({ title, value, highlighted, onClick, className = "" }) {
   return (
-    <div className={`bg-white rounded-2xl p-6 shadow-sm border transition ${highlighted ? "border-indigo-500 ring-4 ring-indigo-50 shadow-md" : "border-gray-100 dark:border-gray-800"
-      } hover:shadow-md dark:bg-[#1a1b23]`}>
+    <div 
+      onClick={onClick}
+      className={`bg-white rounded-2xl p-6 shadow-sm border transition ${highlighted ? "border-indigo-500 ring-4 ring-indigo-50 shadow-md" : "border-gray-100 dark:border-gray-800"
+      } hover:shadow-md dark:bg-[#1a1b23] ${className}`}
+    >
       <div className="flex justify-between items-start mb-2">
         <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
         {highlighted && (
@@ -369,3 +386,64 @@ const DashboardCard = memo(function DashboardCard({ title, value, highlighted })
     </div>
   );
 });
+
+function LowStockModal({ products, onClose }) {
+  const lowStockProducts = products.filter(doc => {
+    const data = doc.data();
+    const variants = data.variants || [];
+    const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    return totalStock > 0 && totalStock < 5;
+  }).map(doc => ({ id: doc.id, ...doc.data() }));
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col dark:bg-[#1a1b23] dark:border dark:border-gray-800">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Low Stock Items</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors dark:hover:bg-gray-700">
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto max-h-[60vh] space-y-3 custom-scrollbar">
+          {lowStockProducts.length === 0 ? (
+            <p className="text-center text-gray-500 py-10">No low stock items found.</p>
+          ) : (
+            lowStockProducts.map(product => {
+              const variants = product.variants || [];
+              const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+              return (
+                <div key={product.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl dark:bg-gray-800/50">
+                  <div className="relative w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                    <Image
+                      src={product.images?.[0] || product.imageUrl || "/placeholder.png"}
+                      fill
+                      alt={product.title}
+                      className="object-cover"
+                      sizes="48px"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate dark:text-white">{product.title || product.Name}</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {variants.map((v, i) => (
+                        <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-full ${v.stock < 5 ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-gray-600'}`}>
+                          {v.color || v.size}: {v.stock}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-black text-rose-600 uppercase">{totalStock} LEFT</p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+        <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex justify-end dark:bg-gray-800/50 dark:border-gray-700">
+          <button onClick={onClose} className="px-6 py-2 bg-black text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}

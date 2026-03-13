@@ -1,4 +1,4 @@
-import { getAdminDb } from "../../firebaseAdmin";
+import { getAdminDb } from "../firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 
 /**

@@ -80,99 +80,74 @@ function OrdersContent() {
   const updateStatus = async (order, newStatus) => {
     if (order.status === newStatus) return;
 
-    // IF CANCELLED -> ANY (EXCEPT CANCELLED): DECREASE STOCK
-    if (order.status === "cancelled" && newStatus !== "cancelled") {
-      for (const item of order.items) {
-        const productRef = doc(db, "products", item.productId);
-        const productSnap = await getDoc(productRef);
-
-        if (!productSnap.exists()) continue;
-
-        const product = productSnap.data();
-        const variants = product.variants || [];
-
-        const updatedVariants = variants.map((v) => {
-          if (v.id === item.variantId) {
-            return {
-              ...v,
-              stock: Math.max(0, (v.stock || 0) - item.qty),
-            };
+    try {
+      const response = await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          orderId: order.id, 
+          status: newStatus,
+          message: newStatus === 'cancelled' ? (window.prompt("Enter cancellation reason (optional):") || "") : "",
+          user: {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName
           }
-          return v;
-        });
+        }),
+      });
 
-        await updateDoc(productRef, {
-          variants: updatedVariants,
-          totalStock: updatedVariants.reduce(
-            (sum, v) => sum + (v.stock || 0),
-            0
-          ),
-        });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update status");
       }
-    }
 
-    // IF ANY -> CANCELLED: INCREASE STOCK
-    if (newStatus === "cancelled" && order.status !== "cancelled") {
-      for (const item of order.items) {
-        const productRef = doc(db, "products", item.productId);
-        const productSnap = await getDoc(productRef);
-
-        if (!productSnap.exists()) continue;
-
-        const product = productSnap.data();
-        const variants = product.variants || [];
-
-        const updatedVariants = variants.map((v) => {
-          if (v.id === item.variantId) {
-            return {
-              ...v,
-              stock: (v.stock || 0) + item.qty,
-            };
-          }
-          return v;
-        });
-
-        await updateDoc(productRef, {
-          variants: updatedVariants,
-          totalStock: updatedVariants.reduce(
-            (sum, v) => sum + (v.stock || 0),
-            0
-          ),
-        });
+      // Update local state if modal is open
+      if (selectedOrder?.id === order.id) {
+        setSelectedOrder({ ...order, status: newStatus });
       }
-    }
-
-    const orderRef = doc(db, "orders", order.id);
-    await updateDoc(orderRef, {
-      status: newStatus,
-      updatedAt: new Date(),
-    });
-
-    await logActivity("Updated Order Status", `Changed order #${order.id.slice(0, 6).toUpperCase()} status to ${newStatus}`, user, {
-      status: { from: order.status, to: newStatus }
-    });
-
-    // Update local state if modal is open
-    if (selectedOrder?.id === order.id) {
-      setSelectedOrder({ ...order, status: newStatus });
+    } catch (error) {
+      console.error("❌ Error updating status:", error);
+      alert("Failed to update order status. Please try again.");
     }
   };
 
-  /* CONFIRM PAYMENT */
-  const confirmPayment = async (order) => {
-    const orderRef = doc(db, "orders", order.id);
-    await updateDoc(orderRef, {
-      "payment.paid": true,
-      updatedAt: new Date(),
-    });
+  /* CONFIRM/REJECT PAYMENT */
+  const verdictPayment = async (order, isPaid) => {
+    const message = !isPaid ? (window.prompt("Enter reason for payment rejection:") || "Payment was not approved. Please re-order or contact support.") : "";
+    
+    if (!isPaid && !message) return; // Cancel if no reason provided for rejection
 
-    await logActivity("Confirmed Payment", `Marked order #${order.id.slice(0, 6).toUpperCase()} as paid`, user);
-
-    if (selectedOrder?.id === order.id) {
-      setSelectedOrder({
-        ...order,
-        payment: { ...order.payment, paid: true },
+    try {
+      const response = await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          orderId: order.id, 
+          paymentPaid: isPaid,
+          message,
+          user: {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName
+          }
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update payment");
+      }
+
+      if (selectedOrder?.id === order.id) {
+        setSelectedOrder({
+          ...order,
+          status: !isPaid ? 'payment_rejected' : order.status,
+          payment: { ...order.payment, paid: isPaid },
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error updating payment:", error);
+      alert("Failed to update payment. Please try again.");
     }
   };
 
@@ -284,7 +259,7 @@ function OrdersContent() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           updateStatus={updateStatus}
-          confirmPayment={confirmPayment}
+          verdictPayment={verdictPayment}
         />
       )}
     </main>
@@ -298,6 +273,7 @@ function StatusBadge({ status }) {
     shipped: "bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900 dark:text-indigo-200 dark:border-indigo-800",
     delivered: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900 dark:text-emerald-200 dark:border-emerald-800",
     cancelled: "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900 dark:text-rose-200 dark:border-rose-800",
+    payment_rejected: "bg-red-50 text-red-700 border-red-100 dark:bg-red-900 dark:text-red-200 dark:border-red-800",
   };
 
   return (
@@ -307,16 +283,16 @@ function StatusBadge({ status }) {
   );
 }
 
-function OrderDetailsModal({ order, onClose, updateStatus, confirmPayment }) {
+function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [processingVerdict, setProcessingVerdict] = useState(false);
 
-  const handleConfirmPayment = async () => {
-    setConfirmingPayment(true);
+  const handlePaymentVerdict = async (isPaid) => {
+    setProcessingVerdict(true);
     try {
-      await confirmPayment(order);
+      await verdictPayment(order, isPaid);
     } finally {
-      setConfirmingPayment(false);
+      setProcessingVerdict(false);
     }
   };
 
@@ -550,25 +526,35 @@ function OrderDetailsModal({ order, onClose, updateStatus, confirmPayment }) {
                     </div>
                   )}
 
-                  {/* Confirm Payment button */}
-                  {!payment.paid && hasScreenshot && (
-                    <button
-                      onClick={handleConfirmPayment}
-                      disabled={confirmingPayment}
-                      className="w-full mt-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2"
-                    >
-                      {confirmingPayment ? (
-                        <>
-                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                          </svg>
-                          Confirming...
-                        </>
-                      ) : (
-                        <>✅ Confirm Payment</>
-                      )}
-                    </button>
+                  {/* Confirm/Reject Payment buttons */}
+                  {!payment.paid && order.status !== 'payment_rejected' && hasScreenshot && (
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => handlePaymentVerdict(true)}
+                        disabled={processingVerdict}
+                        className="w-full mt-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2"
+                      >
+                        {processingVerdict ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                            </svg>
+                            Processing...
+                          </>
+                        ) : (
+                          <>✅ Confirm Payment</>
+                        )}
+                      </button>
+                      
+                      <button
+                        onClick={() => handlePaymentVerdict(false)}
+                        disabled={processingVerdict}
+                        className="w-full py-2.5 border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl text-sm font-bold transition-colors shadow-sm dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
+                      >
+                        ❌ Reject Payment
+                      </button>
+                    </div>
                   )}
 
                   {payment.paid && (
