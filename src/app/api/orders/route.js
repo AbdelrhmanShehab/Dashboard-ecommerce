@@ -162,10 +162,13 @@ export async function PATCH(request) {
         }
       } else {
         messages.push(`Payment rejected`);
-        updates.status = 'payment_rejected'; // Switch status to rejected for clarity
-        // Send status update email for rejection
+        // If not already handling status change to cancelled from frontend, do it here
+        if (!status || status !== 'cancelled') {
+           updates.status = 'cancelled';
+        }
+        // Send status update email for rejection (we mark this so we don't send duplicate later)
         try {
-          await sendOrderStatusUpdateEmail({ id: orderId, ...orderData, status: 'payment_rejected', message });
+          await sendOrderStatusUpdateEmail({ id: orderId, ...orderData, status: 'cancelled', message });
         } catch (emailError) {
           console.error('📧 [API/Orders] Failed to send payment rejection email:', emailError);
         }
@@ -196,7 +199,7 @@ export async function PATCH(request) {
     }
 
     // Send status update email if status changed (and not already handled by payment rejection)
-    if (status && status !== orderData.status && status !== 'payment_rejected') {
+    if (status && status !== orderData.status && (paymentPaid === undefined || paymentPaid === true)) {
       try {
         await sendOrderStatusUpdateEmail({ id: orderId, ...orderData, status, message });
       } catch (emailError) {

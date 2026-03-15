@@ -123,6 +123,7 @@ function OrdersContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           orderId: order.id, 
+          status: !isPaid ? 'cancelled' : undefined,
           paymentPaid: isPaid,
           message,
           user: {
@@ -141,7 +142,7 @@ function OrdersContent() {
       if (selectedOrder?.id === order.id) {
         setSelectedOrder({
           ...order,
-          status: !isPaid ? 'payment_rejected' : order.status,
+          status: !isPaid ? 'cancelled' : order.status,
           payment: { ...order.payment, paid: isPaid },
         });
       }
@@ -543,7 +544,7 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
                   )}
 
                   {/* Confirm/Reject Payment buttons */}
-                  {!payment.paid && order.status !== 'payment_rejected' && hasScreenshot && (
+                  {!payment.paid && order.status !== 'payment_rejected' && order.status !== 'cancelled' && hasScreenshot && (
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={() => handlePaymentVerdict(true)}
