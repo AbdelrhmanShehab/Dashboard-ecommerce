@@ -18,10 +18,10 @@ const initAdmin = () => {
   };
 
   if (!adminConfig.projectId || !adminConfig.clientEmail || !adminConfig.privateKey) {
-    console.error("❌ Firebase Admin credentials missing in .env.local!");
+    console.error("❌ Firebase Admin credentials missing!");
     console.error("Checked for: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY");
     // Throwing instead of warning to make it obvious in server logs
-    throw new Error("Missing Firebase Admin credentials. Check your .env.local file.");
+    throw new Error("Missing Firebase Admin credentials. Please check your environment variables.");
   }
 
   try {

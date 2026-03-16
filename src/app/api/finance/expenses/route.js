@@ -23,7 +23,10 @@ export async function POST(request) {
     return NextResponse.json({ id: docRef.id, message: 'Expense created' }, { status: 201 });
   } catch (error) {
     console.error('❌ [API/Finance/Expenses] POST Error:', error);
-    return NextResponse.json({ error: 'Failed to create expense' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to create expense',
+      details: error.message 
+    }, { status: 500 });
   }
 }
 
@@ -41,6 +44,9 @@ export async function DELETE(request) {
     return NextResponse.json({ message: 'Expense deleted' });
   } catch (error) {
     console.error('❌ [API/Finance/Expenses] DELETE Error:', error);
-    return NextResponse.json({ error: 'Failed to delete expense' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to delete expense',
+      details: error.message
+    }, { status: 500 });
   }
 }
