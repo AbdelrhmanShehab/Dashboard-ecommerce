@@ -17,7 +17,7 @@ export async function POST(request) {
       date,
       note: note || '',
       createdAt: new Date(),
-      createdBy: user ? { uid: user.uid, email: user.email } : null,
+      createdBy: user && user.uid ? { uid: user.uid, email: user.email || '' } : null,
     });
 
     return NextResponse.json({ id: docRef.id, message: 'Expense created' }, { status: 201 });
