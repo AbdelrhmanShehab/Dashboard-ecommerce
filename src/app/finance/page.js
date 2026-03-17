@@ -50,7 +50,7 @@ const EXPENSE_CATEGORIES = [
   "Suppliers / Inventory",
   "Website / Tools",
   "Operations",
-  "Other",
+  "Personal",
 ];
 
 const CATEGORY_COLORS = [
@@ -721,10 +721,13 @@ function AddExpenseModal({ user, onClose }) {
           user: { uid: user?.uid, email: user?.email },
         }),
       });
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.details || data?.error || `HTTP ${res.status}`);
+      }
       onClose();
-    } catch {
-      setError("Failed to save expense. Please try again.");
+    } catch (err) {
+      setError(`Failed to save: ${err.message}`);
     } finally {
       setSaving(false);
     }
