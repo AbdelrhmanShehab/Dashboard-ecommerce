@@ -125,15 +125,24 @@ function FinanceContent() {
       (o) => getMonthKey(getOrderDate(o)) === thisMonth
     );
     const revenueThisMonth = thisMonthOrders.reduce((s, o) => s + (o.totals?.total || 0), 0);
+    // Revenue Breakdown
     const onlineRevenueThisMonth = thisMonthOrders
       .filter((o) => o.payment?.method === "online")
       .reduce((s, o) => s + (o.totals?.total || 0), 0);
-    const cashRevenueThisMonth = thisMonthOrders
-      .filter((o) => o.payment?.method !== "online")
+
+    // "Received from Shipping" = Cash orders marked as Paid
+    const cashCollectedThisMonth = thisMonthOrders
+      .filter((o) => o.payment?.method !== "online" && o.payment?.paid)
       .reduce((s, o) => s + (o.totals?.total || 0), 0);
-    // "Collected by shipping" = delivered cash orders this month
-    const shippingCollectedThisMonth = thisMonthOrders
-      .filter((o) => o.payment?.method !== "online" && o.status === "delivered")
+
+    // "Pending from Shipping" = Delivered cash orders NOT yet marked as Paid
+    const cashPendingThisMonth = thisMonthOrders
+      .filter((o) => o.payment?.method !== "online" && !o.payment?.paid && o.status === "delivered")
+      .reduce((s, o) => s + (o.totals?.total || 0), 0);
+
+    // Total Cash involved this month (Collected + Pending + Processing)
+    const totalCashVolume = thisMonthOrders
+      .filter((o) => o.payment?.method !== "online")
       .reduce((s, o) => s + (o.totals?.total || 0), 0);
 
     // Revenue per month (last 6)
@@ -197,8 +206,9 @@ function FinanceContent() {
       metrics: {
         revenueThisMonth,
         onlineRevenueThisMonth,
-        cashRevenueThisMonth,
-        shippingCollectedThisMonth,
+        cashCollectedThisMonth,
+        cashPendingThisMonth,
+        totalCashVolume,
         totalExpensesThisMonth,
         profitThisMonth,
         revenueByMonth,
@@ -395,9 +405,9 @@ function FinanceContent() {
           <>
             {/* KPI CARDS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-              <KpiCard label="Revenue This Month" value={metrics?.revenueThisMonth} color="indigo" icon="💳" note="All active orders" />
-              <KpiCard label="Online Revenue" value={metrics?.onlineRevenueThisMonth} color="emerald" icon="🌐" note="Already received" />
-              <KpiCard label="Cash Revenue" value={metrics?.cashRevenueThisMonth} color="amber" icon="💵" note="Pending from shipping" />
+              <KpiCard label="Online Revenue" value={metrics?.onlineRevenueThisMonth} color="emerald" icon="🌐" note="Paid via Instapay" />
+              <KpiCard label="Received from Shipping" value={metrics?.cashCollectedThisMonth} color="emerald" icon="💰" note="Cash marked as Received" />
+              <KpiCard label="Pending from Shipping" value={metrics?.cashPendingThisMonth} color="amber" icon="🚚" note="Delivered but not yet paid" />
               <KpiCard label="Net Profit This Month" value={metrics?.profitThisMonth} color={metrics?.profitThisMonth >= 0 ? "emerald" : "rose"} icon="📊" note={`Expenses: ${(metrics?.totalExpensesThisMonth || 0).toLocaleString()} EGP`} />
             </div>
 

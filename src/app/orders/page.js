@@ -544,11 +544,11 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
                   )}
 
                   {/* Confirm/Reject Payment buttons */}
-                  {!payment.paid && order.status !== 'payment_rejected' && order.status !== 'cancelled' && hasScreenshot && (
+                  {!payment.paid && order.status !== 'payment_rejected' && order.status !== 'cancelled' && (
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={() => handlePaymentVerdict(true)}
-                        disabled={processingVerdict}
+                        disabled={processingVerdict || (isOnline && !hasScreenshot)}
                         className="w-full mt-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2"
                       >
                         {processingVerdict ? (
@@ -560,7 +560,7 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
                             Processing...
                           </>
                         ) : (
-                          <>✅ Confirm Payment</>
+                          <>✅ Confirm {isOnline ? "Payment" : "Cash Received"}</>
                         )}
                       </button>
                       
