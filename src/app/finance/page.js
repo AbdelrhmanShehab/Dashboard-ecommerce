@@ -163,7 +163,7 @@ function FinanceContent() {
       (e) => e.date && e.date.startsWith(thisMonth)
     );
     const totalExpensesThisMonth = expensesThisMonth.reduce((s, e) => s + (e.cost || 0), 0);
-    const profitThisMonth = revenueThisMonth - totalExpensesThisMonth;
+    const profitThisMonth = realRevenueCollected - totalExpensesThisMonth;
 
     // Expenses per month (last 6)
     const expensesByMonth = {};
@@ -281,7 +281,7 @@ function FinanceContent() {
   const insights = useMemo(() => {
     if (!metrics) return [];
     const list = [];
-    const { revenueThisMonth, lastMonthRevenue, totalExpensesThisMonth, lastMonthExpenses, expenseByCategory } = metrics;
+    const { realRevenueCollected: revenueThisMonth, lastMonthRevenue, totalExpensesThisMonth, lastMonthExpenses, expenseByCategory } = metrics;
 
     // Revenue trend
     if (lastMonthRevenue > 0) {
