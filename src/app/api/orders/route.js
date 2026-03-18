@@ -175,6 +175,15 @@ export async function PATCH(request) {
       }
     }
 
+    const { paymentFullyPaid } = await request.json().catch(() => ({}));
+    if (paymentFullyPaid !== undefined) {
+      updates['payment.fullyPaid'] = paymentFullyPaid;
+      if (paymentFullyPaid === true) {
+        updates['payment.paid'] = true; // If fully paid, it's also implicitly paid (deposit included)
+        messages.push(`Total amount collected`);
+      }
+    }
+
     await orderRef.update(updates);
 
     // Activity Logging (Server-side equivalent)

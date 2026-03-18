@@ -80,6 +80,12 @@ function OrdersContent() {
   const updateStatus = async (order, newStatus) => {
     if (order.status === newStatus) return;
 
+    // PREVENT CONFIRMATION IF PAYMENT IS NOT VERIFIED
+    if (newStatus === 'confirmed' && !order.payment?.paid) {
+      alert("Please confirm the payment (deposit) before confirming this order.");
+      return;
+    }
+
     try {
       const response = await fetch("/api/orders", {
         method: "PATCH",
@@ -108,6 +114,42 @@ function OrdersContent() {
     } catch (error) {
       console.error("❌ Error updating status:", error);
       alert(`Error updating order status: ${error.message}`);
+    }
+  };
+
+  /* CONFIRM TOTAL COLLECTION (After Delivery) */
+  const confirmTotalCollected = async (order) => {
+    if (!confirm("Are you sure you have collected the FULL remaining amount for this order?")) return;
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          orderId: order.id, 
+          paymentFullyPaid: true,
+          user: {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server returned ${response.status}`);
+      }
+
+      if (selectedOrder?.id === order.id) {
+        setSelectedOrder({
+          ...order,
+          payment: { ...order.payment, fullyPaid: true, paid: true },
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error confirming collection:", error);
+      alert(`Error confirming collection: ${error.message}`);
     }
   };
 
@@ -263,6 +305,7 @@ function OrdersContent() {
           onClose={() => setSelectedOrder(null)}
           updateStatus={updateStatus}
           verdictPayment={verdictPayment}
+          confirmTotalCollected={confirmTotalCollected}
         />
       )}
     </main>
@@ -286,7 +329,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
+function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment, confirmTotalCollected }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [processingVerdict, setProcessingVerdict] = useState(false);
 
@@ -393,10 +436,12 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
                 <div className="flex flex-wrap gap-3">
                   <button
                     onClick={() => updateStatus(order, "confirmed")}
-                    disabled={order.status !== "pending"}
-                    className="px-4 py-2 bg-black text-white rounded-lg text-xs font-bold hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed dark:bg-indigo-600 dark:hover:bg-indigo-700 h-10 min-w-[120px]"
+                    disabled={order.status !== "pending" || !order.payment?.paid}
+                    className={`px-4 py-2 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed h-10 min-w-[120px] ${
+                      !order.payment?.paid && order.status === "pending" ? "bg-gray-400" : "bg-black dark:bg-indigo-600 dark:hover:bg-indigo-700"
+                    }`}
                   >
-                    Confirm Order
+                    {!order.payment?.paid && order.status === "pending" ? "Verify Deposit First" : "Confirm Order"}
                   </button>
                   <button
                     onClick={() => updateStatus(order, "shipped")}
@@ -412,6 +457,14 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
                   >
                     Mark Delivered
                   </button>
+                  {order.status === "delivered" && !order.payment?.fullyPaid && (
+                    <button
+                      onClick={() => confirmTotalCollected(order)}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors h-10 min-w-[120px] shadow-sm animate-pulse"
+                    >
+                      💰 Confirm Total Collected
+                    </button>
+                  )}
                   <button
                     onClick={() => updateStatus(order, "cancelled")}
                     disabled={order.status === "cancelled" || order.status === "delivered"}
@@ -490,11 +543,13 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment }) {
                         {isOnline ? "Online Payment (Instapay)" : "Cash on Delivery"}
                       </span>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${payment.paid
-                      ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700"
-                      : "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700"
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${payment.fullyPaid
+                      ? "bg-emerald-500 text-white border-emerald-600"
+                      : payment.paid
+                        ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700"
+                        : "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300 dark:border-amber-700"
                       }`}>
-                      {payment.paid ? "✓ Paid" : "Pending"}
+                      {payment.fullyPaid ? "✓ Fully Collected (Total)" : payment.paid ? "✓ Deposit Paid" : "Pending Deposit"}
                     </span>
                   </div>
 

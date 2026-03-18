@@ -124,26 +124,27 @@ function FinanceContent() {
     const thisMonthOrders = validOrders.filter(
       (o) => getMonthKey(getOrderDate(o)) === thisMonth
     );
-    const revenueThisMonth = thisMonthOrders.reduce((s, o) => s + (o.totals?.total || 0), 0);
-    // Revenue Breakdown
-    const onlineRevenueThisMonth = thisMonthOrders
-      .filter((o) => o.payment?.method === "online")
-      .reduce((s, o) => s + (o.totals?.total || 0), 0);
+    // --- REAL REVENUE CALCULATION ---
+    // 1. Deposits Received (Verified Instapay/Verified Cash Deposit)
+    const depositsReceived = thisMonthOrders
+      .filter((o) => o.payment?.paid)
+      .reduce((s, o) => s + (o.payment?.depositAmount || 0), 0);
 
-    // "Received from Shipping" = Cash orders marked as Paid
-    const cashCollectedThisMonth = thisMonthOrders
-      .filter((o) => o.payment?.method !== "online" && o.payment?.paid)
-      .reduce((s, o) => s + (o.totals?.total || 0), 0);
+    // 2. Final Balances Received (Total - Deposit)
+    const finalBalancesReceived = thisMonthOrders
+      .filter((o) => o.payment?.fullyPaid)
+      .reduce((s, o) => s + ((o.totals?.total || 0) - (o.payment?.depositAmount || 0)), 0);
 
-    // "Pending from Shipping" = Delivered cash orders NOT yet marked as Paid
+    const realRevenueCollected = depositsReceived + finalBalancesReceived;
+
+    // --- PENDING REVENUE CALCULATION ---
+    // "Pending from Shipping" = Delivered orders NOT yet fully paid
     const cashPendingThisMonth = thisMonthOrders
-      .filter((o) => o.payment?.method !== "online" && !o.payment?.paid && o.status === "delivered")
-      .reduce((s, o) => s + (o.totals?.total || 0), 0);
+      .filter((o) => o.status === "delivered" && !o.payment?.fullyPaid)
+      .reduce((s, o) => s + ((o.totals?.total || 0) - (o.payment?.depositAmount || 0)), 0);
 
-    // Total Cash involved this month (Collected + Pending + Processing)
-    const totalCashVolume = thisMonthOrders
-      .filter((o) => o.payment?.method !== "online")
-      .reduce((s, o) => s + (o.totals?.total || 0), 0);
+    // Legacy/Comparison metric: Total potential revenue if all delivered orders are paid
+    const totalPotentialRevenue = thisMonthOrders.reduce((s, o) => s + (o.totals?.total || 0), 0);
 
     // Revenue per month (last 6)
     const revenueByMonth = {};
@@ -204,11 +205,11 @@ function FinanceContent() {
 
     return {
       metrics: {
-        revenueThisMonth,
-        onlineRevenueThisMonth,
-        cashCollectedThisMonth,
+        realRevenueCollected,
+        depositsReceived,
+        finalBalancesReceived,
         cashPendingThisMonth,
-        totalCashVolume,
+        totalPotentialRevenue,
         totalExpensesThisMonth,
         profitThisMonth,
         revenueByMonth,
@@ -231,7 +232,7 @@ function FinanceContent() {
       labels: last6Keys.map(getMonthLabel),
       datasets: [{
         label: "Revenue (EGP)",
-        data: last6Keys.map((k) => metrics.revenueByMonth[k] || 0),
+        data: last6Keys.map((k) => metrics.revenueByMonth[k] || 0), // Keeping potential revenue for trends
         fill: true,
         borderColor: "#6366f1",
         backgroundColor: "rgba(99,102,241,0.12)",
@@ -405,19 +406,19 @@ function FinanceContent() {
           <>
             {/* KPI CARDS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-              <KpiCard label="Online Revenue" value={metrics?.onlineRevenueThisMonth} color="emerald" icon="🌐" note="Paid via Instapay" />
-              <KpiCard label="Received from Shipping" value={metrics?.cashCollectedThisMonth} color="emerald" icon="💰" note="Cash marked as Received" />
-              <KpiCard label="Pending from Shipping" value={metrics?.cashPendingThisMonth} color="amber" icon="🚚" note="Delivered but not yet paid" />
-              <KpiCard label="Net Profit This Month" value={metrics?.profitThisMonth} color={metrics?.profitThisMonth >= 0 ? "emerald" : "rose"} icon="📊" note={`Expenses: ${(metrics?.totalExpensesThisMonth || 0).toLocaleString()} EGP`} />
+              <KpiCard label="Real Revenue Received" value={metrics?.realRevenueCollected} color="indigo" icon="💰" note="Verified Deposits + Final Payments" />
+              <KpiCard label="Deposits Received" value={metrics?.depositsReceived} color="emerald" icon="✅" note="Verified partial payments" />
+              <KpiCard label="Pending from Shipping" value={metrics?.cashPendingThisMonth} color="amber" icon="🚚" note="Remaining balance of delivered orders" />
+              <KpiCard label="Net Profit This Month" value={metrics?.realRevenueCollected - (metrics?.totalExpensesThisMonth || 0)} color={(metrics?.realRevenueCollected - (metrics?.totalExpensesThisMonth || 0)) >= 0 ? "emerald" : "rose"} icon="📊" note={`Expenses: ${(metrics?.totalExpensesThisMonth || 0).toLocaleString()} EGP`} />
             </div>
 
             {/* MONTHLY SUMMARY BANNER */}
             <div className="bg-white dark:bg-[#1a1b23] border border-gray-100 dark:border-gray-800 rounded-2xl p-6 mb-8 shadow-sm">
               <h2 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">This Month at a Glance</h2>
               <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-800">
-                <SummaryFigure label="Revenue" value={metrics?.revenueThisMonth} color="indigo" />
+                <SummaryFigure label="Real Received" value={metrics?.realRevenueCollected} color="indigo" />
                 <SummaryFigure label="Expenses" value={metrics?.totalExpensesThisMonth} color="rose" />
-                <SummaryFigure label="Profit" value={metrics?.profitThisMonth} color={metrics?.profitThisMonth >= 0 ? "emerald" : "rose"} />
+                <SummaryFigure label="True Profit" value={metrics?.realRevenueCollected - (metrics?.totalExpensesThisMonth || 0)} color={(metrics?.realRevenueCollected - (metrics?.totalExpensesThisMonth || 0)) >= 0 ? "emerald" : "rose"} />
               </div>
             </div>
 
