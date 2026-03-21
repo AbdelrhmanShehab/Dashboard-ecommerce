@@ -100,9 +100,6 @@ src/
 - **Watch Demo**: [Live Video Run](https://drive.google.com/file/d/1MrXd8iQpSULdsQ6gW_NU6uJH3kE6Hz_7/view?usp=sharing)
 
 ---
-
-## 📝 License
-
-Distributed under the **ISC License**. See `LICENSE` for more information.
+\
 
 **Author**: [Abdelrhman Hossam](https://github.com/AbdelrhmanShehab)
