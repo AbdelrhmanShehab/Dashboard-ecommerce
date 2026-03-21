@@ -124,7 +124,17 @@ function DashboardContent() {
 
   // Real-time Live Counters
   const liveCount = liveSnap?.size || 0;
-  const activeCartsCount = leadsSnap?.docs.filter(d => d.data().status === 'pending' && d.data().lastActivity === 'cart').length || 0;
+
+  const activeCartsCount = useMemo(() => {
+    if (!leadsSnap) return 0;
+    const pendingCartLeads = leadsSnap.docs.filter(d => d.data().status === 'pending' && d.data().lastActivity === 'cart');
+    const seenEmails = new Set();
+    pendingCartLeads.forEach(d => {
+      const email = d.data().email?.toLowerCase();
+      if (email) seenEmails.add(email);
+    });
+    return seenEmails.size;
+  }, [leadsSnap]);
 
   return (
     <main className="min-h-screen bg-[#f6f7fb] px-8 py-10 dark:bg-[#1a1b23] dark:text-white">
@@ -143,9 +153,9 @@ function DashboardContent() {
         <DashboardCard title="Products" value={totalProducts} />
         <DashboardCard title="Orders" value={totalOrders} />
         <DashboardCard title="Revenue" value={`${revenue.toLocaleString()} EGP`} />
-        <DashboardCard 
-          title="Low Stock" 
-          value={lowStockCount} 
+        <DashboardCard
+          title="Low Stock"
+          value={lowStockCount}
           onClick={() => setShowLowStockModal(true)}
           className="cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-900/10 transition-colors"
         />
@@ -153,9 +163,9 @@ function DashboardContent() {
 
       {/* LOW STOCK MODAL */}
       {showLowStockModal && (
-        <LowStockModal 
-          products={productsSnap?.docs || []} 
-          onClose={() => setShowLowStockModal(false)} 
+        <LowStockModal
+          products={productsSnap?.docs || []}
+          onClose={() => setShowLowStockModal(false)}
         />
       )}
 
@@ -163,7 +173,7 @@ function DashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
 
         {/* RECENT PRODUCTS */}
-        <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
+        <div className="bg-white rounded-3xl shadow-sm p-5 md:p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-xl font-bold text-gray-900">Recent Products</h2>
             <Link href="/products" className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full transition-colors">
@@ -196,7 +206,7 @@ function DashboardContent() {
               return (
                 <div
                   key={doc.id}
-                  className="group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer dark:hover:bg-gray-800 dark:hover:border-gray-700"
+                  className="group flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer dark:hover:bg-gray-800 dark:hover:border-gray-700"
                   onClick={() => router.push(`/products`)}
                 >
                   <div className="relative w-12 h-12 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
@@ -230,7 +240,7 @@ function DashboardContent() {
         </div>
 
         {/* RECENT ORDERS */}
-        <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
+        <div className="bg-white rounded-3xl shadow-sm p-5 md:p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-xl font-bold text-gray-900">Recent Orders</h2>
             <Link href="/orders" className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-3 py-1.5 rounded-full transition-colors">
@@ -259,9 +269,8 @@ function DashboardContent() {
               return (
                 <div
                   key={doc.id}
-                  className={`group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer dark:hover:bg-gray-800 dark:hover:border-gray-700 ${
-                    (data.status === 'cancelled' || data.status === 'payment_rejected') ? 'opacity-50 grayscale-[0.5]' : ''
-                  }`}
+                  className={`group flex flex-wrap sm:flex-nowrap items-center gap-3 md:gap-4 p-3 md:p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all cursor-pointer dark:hover:bg-gray-800 dark:hover:border-gray-700 ${(data.status === 'cancelled' || data.status === 'payment_rejected') ? 'opacity-50 grayscale-[0.5]' : ''
+                    }`}
                   onClick={() => router.push(`/orders`)}
                 >
                   <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 text-lg group-hover:bg-white transition-colors">
@@ -293,10 +302,10 @@ function DashboardContent() {
         </div>
 
         {/* REAL-TIME DETAILS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mt-12 mb-12">
 
           {/* LIVE NOW DETAILS */}
-          <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
+          <div className="bg-white w-full lg:w-96 rounded-3xl shadow-sm p-5 md:p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900">Live Now Details</h2>
               <span className="flex items-center gap-2 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full uppercase tracking-widest">
@@ -329,7 +338,7 @@ function DashboardContent() {
           </div>
 
           {/* ACTIVE CARTS DETAILS */}
-          <div className="bg-white rounded-3xl shadow-sm p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
+          <div className="bg-white w-full lg:w-96 rounded-3xl shadow-sm p-4 md:p-8 border border-gray-100 flex flex-col h-full dark:bg-[#1a1b23] dark:border-gray-800">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900">Active Carts Details</h2>
               <Link href="/leads" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full transition-colors">
@@ -337,32 +346,49 @@ function DashboardContent() {
               </Link>
             </div>
             <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
-              {leadsSnap?.docs.filter(d => d.data().status === 'pending' && d.data().lastActivity === 'cart').length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-10">No active carts.</p>
-              ) : (
-                leadsSnap?.docs
-                  .filter(d => d.data().status === 'pending' && d.data().lastActivity === 'cart')
-                  .sort((a, b) => (b.data().updatedAt?.toMillis() || 0) - (a.data().updatedAt?.toMillis() || 0))
-                  .map(doc => {
-                    const data = doc.data();
-                    return (
-                      <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl dark:bg-gray-800/40">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs">🛒</div>
-                          <div>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">{data.name || "Anonymous"}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{data.email}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] font-black bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
-                            Cart
-                          </span>
+              {(() => {
+                if (!leadsSnap) return null;
+                const filtered = leadsSnap.docs.filter(d => d.data().status === 'pending' && d.data().lastActivity === 'cart');
+                if (filtered.length === 0) return <p className="text-gray-400 text-sm text-center py-10">No active carts.</p>;
+
+                // Sort by most recent
+                const sorted = [...filtered].sort((a, b) => (b.data().updatedAt?.toMillis() || 0) - (a.data().updatedAt?.toMillis() || 0));
+
+                // Unique by email
+                const uniqueList = [];
+                const seenEmails = new Set();
+                for (const doc of sorted) {
+                  const email = doc.data().email?.toLowerCase();
+                  if (email) {
+                    if (!seenEmails.has(email)) {
+                      seenEmails.add(email);
+                      uniqueList.push(doc);
+                    }
+                  } else {
+                    uniqueList.push(doc);
+                  }
+                }
+
+                return uniqueList.map(doc => {
+                  const data = doc.data();
+                  return (
+                    <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl dark:bg-gray-800/40">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs">🛒</div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{data.name || "Anonymous"}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{data.email}</p>
                         </div>
                       </div>
-                    );
-                  })
-              )}
+                      <div className="text-right">
+                        <span className="text-[10px] font-black bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                          Cart
+                        </span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
 
@@ -375,10 +401,10 @@ function DashboardContent() {
 /* ---------------- REUSABLE CARD (memoized) ---------------- */
 const DashboardCard = memo(function DashboardCard({ title, value, highlighted, onClick, className = "" }) {
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`bg-white rounded-2xl p-6 shadow-sm border transition ${highlighted ? "border-indigo-500 ring-4 ring-indigo-50 shadow-md" : "border-gray-100 dark:border-gray-800"
-      } hover:shadow-md dark:bg-[#1a1b23] ${className}`}
+        } hover:shadow-md dark:bg-[#1a1b23] ${className}`}
     >
       <div className="flex justify-between items-start mb-2">
         <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
