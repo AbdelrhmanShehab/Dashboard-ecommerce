@@ -96,10 +96,10 @@ src/
 ## 🔗 Links
 
 - **Main Project Repository**: [GitHub](https://github.com/AbdelrhmanShehab/Dashboard-ecommerce)
+- **Frontend Project**: [Frontend Github](https://github.com/AbdelrhmanShehab/hedoomyy)
 - **Live Deployment**: [Dashboard E-commerce](https://dashboard-ecommerce-lyart.vercel.app/)
 - **Watch Demo**: [Live Video Run](https://drive.google.com/file/d/1MrXd8iQpSULdsQ6gW_NU6uJH3kE6Hz_7/view?usp=sharing)
 
 ---
-\
 
 **Author**: [Abdelrhman Hossam](https://github.com/AbdelrhmanShehab)
