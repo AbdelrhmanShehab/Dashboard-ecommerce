@@ -5,6 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import { doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
+import { useDocument } from "react-firebase-hooks/firestore";
+import { db } from "../firebaseConfig";
 import hedoomy from "../../public/images/hedoomyybanner.png";
 const menuSections = [
   {
@@ -67,6 +70,7 @@ const Icon = ({ name, className }) => {
     "trending-up": <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />,
     "clipboard-list": <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />,
     "bell": <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />,
+    "globe": <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9-3-9m-9 9a9 9 0 019-9" />,
     "dollar-sign": <><line x1="12" y1="1" x2="12" y2="23" strokeWidth="2" strokeLinecap="round" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></>,
   };
 
@@ -81,6 +85,25 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
   const pathname = usePathname();
   const { role, user } = useAuth();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const isAdmin = role?.toLowerCase() === "admin";
+
+  // Real-time website status toggle
+  const [websiteDocSnap] = useDocument(doc(db, "settings", "website"));
+  const websiteIsActive = websiteDocSnap?.exists() ? websiteDocSnap.data().isActive : true;
+
+  const handleToggleWebsite = async () => {
+    if (!isAdmin) return;
+    try {
+      const websiteRef = doc(db, "settings", "website");
+      if (!websiteDocSnap?.exists()) {
+        await setDoc(websiteRef, { isActive: !websiteIsActive });
+      } else {
+        await updateDoc(websiteRef, { isActive: !websiteIsActive });
+      }
+    } catch (err) {
+      console.error("Error toggling website status:", err);
+    }
+  };
 
   useEffect(() => {
     const enabled = localStorage.getItem("notificationsEnabled") === "true";
@@ -221,6 +244,32 @@ const Sidebar = memo(function Sidebar({ visible, onClose }) {
               <p className="px-4 mt-2 text-[10px] text-gray-400 leading-tight">
                 Required for sound and vibration on mobile.
               </p>
+            )}
+
+            {/* WEBSITE TOGGLE (ADMIN ONLY) */}
+            {isAdmin && (
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={handleToggleWebsite}
+                  className={`
+                    w-full group relative flex items-center gap-3 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200
+                    ${websiteIsActive
+                      ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400"
+                      : "bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400"
+                    }
+                  `}
+                >
+                  <Icon
+                    name="globe"
+                    className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${websiteIsActive ? "text-indigo-600 dark:text-indigo-400" : "text-rose-600 dark:text-rose-400"}`}
+                  />
+                  {websiteIsActive ? "Website: ON" : "Website: OFF"}
+                  <div className={`ml-auto w-8 h-4 rounded-full relative transition-colors duration-200 ${websiteIsActive ? "bg-indigo-600" : "bg-gray-300"}`}>
+                    <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 ${websiteIsActive ? "right-0.5" : "left-0.5"}`} />
+                  </div>
+                </button>
+              </div>
             )}
           </div>
         </div>
