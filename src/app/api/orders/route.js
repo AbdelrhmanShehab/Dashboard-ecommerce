@@ -56,7 +56,7 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   try {
-    const { orderId, status, paymentPaid, user, message } = await request.json();
+    const { orderId, status, paymentPaid, paymentFullyPaid, user, message } = await request.json();
 
     if (!orderId) {
       return NextResponse.json({ error: 'Missing orderId' }, { status: 400 });
@@ -151,8 +151,9 @@ export async function PATCH(request) {
     // Handle Payment Update
     if (paymentPaid !== undefined) {
       updates['payment.paid'] = paymentPaid;
-      
+
       if (paymentPaid === true) {
+        updates['payment.paidAt'] = new Date(); // Track when it was paid!
         messages.push(`Payment marked as paid`);
         // Send payment confirmation email
         try {
@@ -164,7 +165,7 @@ export async function PATCH(request) {
         messages.push(`Payment rejected`);
         // If not already handling status change to cancelled from frontend, do it here
         if (!status || status !== 'cancelled') {
-           updates.status = 'cancelled';
+          updates.status = 'cancelled';
         }
         // Send status update email for rejection (we mark this so we don't send duplicate later)
         try {
@@ -175,11 +176,12 @@ export async function PATCH(request) {
       }
     }
 
-    const { paymentFullyPaid } = await request.json().catch(() => ({}));
     if (paymentFullyPaid !== undefined) {
       updates['payment.fullyPaid'] = paymentFullyPaid;
       if (paymentFullyPaid === true) {
         updates['payment.paid'] = true; // If fully paid, it's also implicitly paid (deposit included)
+        updates['payment.paidAt'] = new Date();
+        updates['payment.fullyPaidAt'] = new Date(); // Track when final balance was paid!
         messages.push(`Total amount collected`);
       }
     }

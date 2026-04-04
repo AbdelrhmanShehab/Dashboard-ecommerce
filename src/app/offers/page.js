@@ -131,77 +131,106 @@ function OffersContent() {
 
         setLoading(true);
         try {
+            const personalEmail = searchParams.get("email");
+            const personalPid = searchParams.get("pid");
+            const leadId = searchParams.get("lid");
+            
+            const isPersonal = personalEmail && type === "product" && targetId === personalPid;
+
             // 1. Create the Offer Document
             const offerData = {
                 name,
                 type,
                 targetId: type === "all" ? null : targetId,
                 discountPercentage: Number(discountPercentage),
-                targetName: "", // We'll populate this for display purposes
+                targetName: "", 
                 isActive: true,
                 createdAt: serverTimestamp(),
+                isPersonal: !!isPersonal,
+                personalEmail: isPersonal ? personalEmail : null
             };
 
             if (type === "product") {
                 offerData.targetName = products.find(p => p.id === targetId)?.title || "Unknown Product";
             } else if (type === "category") {
-                // Find the category matching the ID (note: products collection stores category name usually, so targetId might be the category name or ID, we need to match)
-                // Let's assume targetId is the category name for easier product matching later
                 offerData.targetName = targetId;
             }
 
             const offerDocRef = await addDoc(collection(db, "offers"), offerData);
             const newOfferId = offerDocRef.id;
 
-            // 2. Apply Offer to Products using Batch Update
-            let matchingProducts = [];
-            if (type === "all") {
-                matchingProducts = products;
-            } else if (type === "category") {
-                matchingProducts = products.filter(p => p.category === targetId);
-            } else if (type === "product") {
-                matchingProducts = products.filter(p => p.id === targetId);
-            }
+            if (isPersonal) {
+                // PERSONALIZED OFFER: Send Email & Update Lead, but DON'T update product globally
+                const targetProduct = products.find(p => p.id === targetId);
+                const pPrice = Number(targetProduct?.price || 0);
+                const nPrice = Math.round(pPrice * (1 - (Number(discountPercentage) / 100)));
 
-            // Filter out products that already have an active offer to avoid overriding (optional, but requested per implementation to just set)
-            // Actually, if we override, we should respect the originalPrice.
+                const emailResponse = await fetch('/api/leads/send-offer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: personalEmail,
+                        productId: targetId,
+                        discount: Number(discountPercentage),
+                        newPrice: nPrice,
+                        originalPrice: pPrice,
+                        productName: targetProduct?.title || "Product",
+                        leadId: leadId
+                    })
+                });
 
-            if (matchingProducts.length > 0) {
-                const batch = writeBatch(db);
-                let updatedCount = 0;
+                if (!emailResponse.ok) {
+                    console.error("Failed to send email API");
+                }
+                
+                await logActivity("Personal Offer Sent", `Sent ${discountPercentage}% off offer to ${personalEmail} via email.`, user);
 
-                for (const prod of matchingProducts) {
-                    const productRef = doc(db, "products", prod.id);
-
-                    let pOriginalPrice = prod.originalPrice;
-                    let currentPrice = Number(prod.price);
-
-                    // If it doesn't have an originalPrice yet, set it now.
-                    if (!pOriginalPrice) {
-                        pOriginalPrice = currentPrice;
-                    }
-
-                    // Calculate new price based on the original price
-                    const newPrice = Math.round(pOriginalPrice * (1 - (Number(discountPercentage) / 100)));
-
-                    batch.update(productRef, {
-                        originalPrice: pOriginalPrice,
-                        price: newPrice,
-                        offerId: newOfferId
-                    });
-                    updatedCount++;
+            } else {
+                // GLOBAL OFFER: Apply to Products using Batch Update
+                let matchingProducts = [];
+                if (type === "all") {
+                    matchingProducts = products;
+                } else if (type === "category") {
+                    matchingProducts = products.filter(p => p.category === targetId);
+                } else if (type === "product") {
+                    matchingProducts = products.filter(p => p.id === targetId);
                 }
 
-                await batch.commit();
-                await logActivity("Offer Applied", `Applied ${discountPercentage}% off to ${updatedCount} products via offer: ${name}`, user);
-            } else {
-                await logActivity("Offer Created", `Created offer: ${name} (No products matched)`, user);
+                if (matchingProducts.length > 0) {
+                    const batch = writeBatch(db);
+                    let updatedCount = 0;
+
+                    for (const prod of matchingProducts) {
+                        const productRef = doc(db, "products", prod.id);
+
+                        let pOriginalPrice = prod.originalPrice;
+                        let currentPrice = Number(prod.price);
+
+                        if (!pOriginalPrice) {
+                            pOriginalPrice = currentPrice;
+                        }
+
+                        const newPrice = Math.round(pOriginalPrice * (1 - (Number(discountPercentage) / 100)));
+
+                        batch.update(productRef, {
+                            originalPrice: pOriginalPrice,
+                            price: newPrice,
+                            offerId: newOfferId
+                        });
+                        updatedCount++;
+                    }
+
+                    await batch.commit();
+                    await logActivity("Offer Applied", `Applied ${discountPercentage}% off to ${updatedCount} products via offer: ${name}`, user);
+                } else {
+                    await logActivity("Offer Created", `Created offer: ${name} (No products matched)`, user);
+                }
             }
 
             closeModal();
             fetchOffers();
-            fetchCategoriesAndProducts(); // Refresh products with new prices
-            alert("Offer created and applied successfully!");
+            fetchCategoriesAndProducts(); 
+            alert(isPersonal ? "Personal offer sent successfully!" : "Offer created and applied successfully!");
 
         } catch (err) {
             console.error("Error creating offer: ", err);

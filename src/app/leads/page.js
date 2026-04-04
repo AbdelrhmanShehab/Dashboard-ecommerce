@@ -172,7 +172,7 @@ function LeadsContent() {
                                         </td>
                                         <td className="p-4 text-center">
                                             <Link
-                                                href={`/offers?email=${encodeURIComponent(lead.email)}&pid=${lead.productId}`}
+                                                href={`/offers?email=${encodeURIComponent(lead.email)}&pid=${lead.productId}&lid=${lead.id}`}
                                                 className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition"
                                             >
                                                 Send Offer
