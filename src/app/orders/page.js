@@ -499,7 +499,24 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment, confi
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-bold text-gray-900 truncate dark:text-white ${isCancelled ? 'line-through decoration-rose-500/50' : ''}`}>{item.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">{item.variant}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {(item.color || item.size) ? (
+                          <>
+                            {item.color && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700 uppercase tracking-tighter">
+                                Color: {item.color}
+                              </span>
+                            )}
+                            {item.size && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700 uppercase tracking-tighter">
+                                Size: {item.size}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          item.variant && <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{item.variant}</p>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-bold text-gray-900 dark:text-white">x{item.qty}</p>
