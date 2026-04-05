@@ -20,7 +20,7 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function OrdersPage() {
   return (
-    <RoleGuard allowedRoles={["admin", "editor"]}>
+    <RoleGuard allowedRoles={["admin", "worker"]}>
       <OrdersContent />
     </RoleGuard>
   );

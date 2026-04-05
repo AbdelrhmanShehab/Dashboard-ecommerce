@@ -15,7 +15,7 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function Shipping() {
     return (
-        <RoleGuard allowedRoles={["admin", "editor"]}>
+        <RoleGuard allowedRoles={["admin", "worker"]}>
             <ShippingContent />
         </RoleGuard>
     );

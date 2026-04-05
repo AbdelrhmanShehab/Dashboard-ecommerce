@@ -11,7 +11,7 @@ import RoleGuard from "../../../components/RoleGuard";
 
 export default function EditUserPage() {
     return (
-        <RoleGuard allowedRoles={["admin", "editor"]}>
+        <RoleGuard allowedRoles={["admin", "worker"]}>
             <EditUserContent />
         </RoleGuard>
     );
@@ -24,7 +24,7 @@ function EditUserContent() {
 
     const [form, setForm] = useState({
         name: "",
-        role: "editor",
+        role: "worker",
         status: "active",
     });
 
@@ -39,7 +39,7 @@ function EditUserContent() {
         }
         setForm({
             name: selectedUser.name || "",
-            role: selectedUser.role || "editor",
+            role: selectedUser.role || "worker",
             status: selectedUser.status || "active",
         });
     }, [selectedUser, router]);
@@ -121,7 +121,8 @@ function EditUserContent() {
                         onChange={handleChange}
                     >
                         <option value="admin">Admin</option>
-                        <option value="editor">Editor</option>
+                        <option value="worker">Worker</option>
+                        <option value="editor">Customer</option>
                     </select>
                 </div>
 

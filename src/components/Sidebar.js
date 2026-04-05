@@ -13,29 +13,29 @@ const menuSections = [
   {
     label: "Main",
     items: [
-      { title: "Dashboard", icon: "home", href: "/dashboard", roles: ["admin", "editor"] },
+      { title: "Dashboard", icon: "home", href: "/dashboard", roles: ["admin", "worker"] },
     ],
   },
   {
     label: "Sales & Growth",
     items: [
-      { title: "Orders", icon: "shopping-bag", href: "/orders", roles: ["admin", "editor"] },
-      { title: "Offers", icon: "tag", href: "/offers", roles: ["admin", "editor"] },
+      { title: "Orders", icon: "shopping-bag", href: "/orders", roles: ["admin", "worker"] },
+      { title: "Offers", icon: "tag", href: "/offers", roles: ["admin", "worker"] },
       { title: "Leads", icon: "target", href: "/leads", roles: ["admin"] },
-      { title: "Shipping", icon: "truck", href: "/shipping", roles: ["admin", "editor"] },
+      { title: "Shipping", icon: "truck", href: "/shipping", roles: ["admin", "worker"] },
     ],
   },
   {
     label: "Inventory",
     items: [
-      { title: "Products", icon: "box", href: "/products", roles: ["admin", "editor"] },
-      { title: "Categories", icon: "layers", href: "/categories", roles: ["admin", "editor"] },
+      { title: "Products", icon: "box", href: "/products", roles: ["admin", "worker"] },
+      { title: "Categories", icon: "layers", href: "/categories", roles: ["admin", "worker"] },
     ],
   },
   {
     label: "People",
     items: [
-      { title: "Customers", icon: "users", href: "/customers", roles: ["admin", "editor"] },
+      { title: "Customers", icon: "users", href: "/customers", roles: ["admin", "worker"] },
       { title: "Users", icon: "user-plus", href: "/users", roles: ["admin"] },
     ],
   },

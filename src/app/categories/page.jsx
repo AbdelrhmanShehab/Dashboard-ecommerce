@@ -19,7 +19,7 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function Categories() {
   return (
-    <RoleGuard allowedRoles={["admin", "editor"]}>
+    <RoleGuard allowedRoles={["admin", "worker"]}>
       <CategoriesContent />
     </RoleGuard>
   );

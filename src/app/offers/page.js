@@ -22,7 +22,7 @@ import format from "date-fns/format";
 
 export default function OffersPage() {
     return (
-        <RoleGuard allowedRoles={["admin", "editor"]}>
+        <RoleGuard allowedRoles={["admin", "worker"]}>
             <Suspense fallback={<div className="p-20 text-center">Loading...</div>}>
                 <OffersContent />
             </Suspense>

@@ -12,7 +12,7 @@ import RoleGuard from "../../components/RoleGuard";
 
 export default function CreateUserPage() {
   return (
-    <RoleGuard allowedRoles={["admin", "editor"]}>
+    <RoleGuard allowedRoles={["admin", "worker"]}>
       <CreateUserContent />
     </RoleGuard>
   );
@@ -112,7 +112,8 @@ function CreateUserContent() {
         onChange={handleChange}
       >
         <option value="admin">Admin</option>
-        <option value="editor">Editor</option>
+        <option value="worker">Worker</option>
+        <option value="editor">Customer</option>
       </select>
 
       <button

@@ -107,29 +107,22 @@ function UserContent() {
   };
 
 
-  if (!user) return null;
+  const staffUsers = filteredUsers.filter(u => u.role === "admin" || u.role === "worker");
+  const customerUsers = filteredUsers.filter(u => u.role === "editor" || !u.role);
 
-  return (
-    <main className="p-4 dark:bg-[#1a1b23] dark:text-white">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
-        <TitlePage
-          header="Users"
-          paragraph="Manage your user accounts and roles."
-        />
-        <div className="flex flex-col md:flex-row items-center gap-4">
-          <input
-            type="text"
-            placeholder="Search by name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 rounded-md border dark:bg-[#0d1321] dark:border-gray-600 dark:text-white"
-          />
-          {(role === "admin" || role === "editor") && (
-            <Link href="/create">
-              <MainBtn content="Add User" />
-            </Link>
-          )}
-        </div>
+  const getDisplayRole = (role) => {
+    if (role === "admin") return "Admin";
+    if (role === "worker") return "Worker";
+    if (role === "editor" || !role) return "Customer";
+    return role;
+  };
+
+  const UserTable = ({ data, title, loading }) => (
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold dark:text-white px-2">
+          {title} <span className="text-sm font-normal text-gray-500 ml-2">({data.length})</span>
+        </h2>
       </div>
       <div className="w-full bg-white rounded-xl overflow-x-auto shadow-sm dark:bg-[#1a1b23] dark:border dark:border-gray-800">
         <div className="inline-block min-w-[800px] w-full align-middle">
@@ -166,21 +159,29 @@ function UserContent() {
                   </td>
                 </tr>
               )}
-              {filteredUsers?.length === 0 && !loading && (
+              {data.length === 0 && !loading && (
                 <tr>
                   <td colSpan={5} className="p-4 text-gray-500">
-                    No users found.
+                    No users found in this category.
                   </td>
                 </tr>
               )}
-              {filteredUsers?.map((user) => (
+              {data.map((user) => (
                 <tr
                   key={user.id}
-                  className="border-t border-gray-200 dark:border-gray-600"
+                  className="border-t border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 >
                   <td className="py-3 px-4 font-semibold">{user.name || "N/A"}</td>
                   <td className="py-3 px-4">{user.email}</td>
-                  <td className="capitalize">{user.role}</td>
+                  <td className="capitalize">
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                      user.role === "admin" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
+                      user.role === "worker" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                      "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                    }`}>
+                      {getDisplayRole(user.role)}
+                    </span>
+                  </td>
                   <td className="py-3 px-4">
                     {user.createdAt
                       ? format(new Date(user.createdAt), "dd MMM yyyy")
@@ -190,7 +191,7 @@ function UserContent() {
                     <Link href="/users/edit">
                       <button
                         onClick={() => handleSetUserData(user)}
-                        className="px-2 py-1 rounded cursor-pointer"
+                        className="px-2 py-1 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       >
                         <Image
                           src="/icons/edit-icon.svg"
@@ -203,7 +204,7 @@ function UserContent() {
                     </Link>
                     <button
                       onClick={() => handleDelete(user.id)}
-                      className="px-2 py-1 rounded cursor-pointer"
+                      className="px-2 py-1 rounded cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     >
                       <Image
                         src="/icons/delete-icon.svg"
@@ -216,35 +217,60 @@ function UserContent() {
                   </td>
                 </tr>
               ))}
-              {error && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-red-500">
-                    <div className="max-w-md mx-auto bg-red-50 dark:bg-red-900/10 p-6 rounded-xl border border-red-100 dark:border-red-900/30">
-                      <p className="font-bold text-lg mb-2">Error loading users</p>
-                      <p className="text-sm mb-4">The system was unable to fetch the user list from Firebase Authentication.</p>
-
-                      {error.message?.includes("Failed to fetch") && (
-                        <div className="text-left text-xs bg-white dark:bg-[#0D1321] p-4 rounded-lg border border-red-200 dark:border-red-800 mb-4 space-y-2">
-                          <p className="font-bold text-red-600 italic">Possible Cause: Missing Credentials</p>
-                          <p>It looks like the <strong>Firebase Admin SDK</strong> is not configured yet.</p>
-                          <p>Please ensure you have filled the <code>.env.local</code> file in the project root with your service account keys.</p>
-                        </div>
-                      )}
-
-                      <button
-                        onClick={fetchUsers}
-                        className="px-6 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
-                      >
-                        Try Refreshing
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
+    </div>
+  );
+
+  if (!user) return null;
+
+  return (
+    <main className="p-4 dark:bg-[#1a1b23] dark:text-white">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+        <TitlePage
+          header="User Management"
+          paragraph="Oversee staff permissions and customer accounts."
+        />
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 rounded-xl border border-gray-200 dark:bg-[#0d1321] dark:border-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+            />
+            <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          {(role === "admin" || role === "worker") && (
+            <Link href="/create">
+              <MainBtn content="Add Staff" />
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {error ? (
+        <div className="max-w-md mx-auto bg-red-50 dark:bg-red-900/10 p-6 rounded-xl border border-red-100 dark:border-red-900/30 text-center">
+          <p className="font-bold text-lg mb-2 text-red-600">Error loading users</p>
+          <p className="text-sm mb-4 text-gray-600 dark:text-gray-400">{error.message}</p>
+          <button
+            onClick={fetchUsers}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
+          >
+            Try Refreshing
+          </button>
+        </div>
+      ) : (
+        <>
+          <UserTable data={staffUsers} title="Staff Members" loading={loading} />
+          <UserTable data={customerUsers} title="Registered Customers" loading={loading} />
+        </>
+      )}
     </main>
   );
 }
