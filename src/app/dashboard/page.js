@@ -217,6 +217,7 @@ function DashboardContent() {
                         alt={title}
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
                         sizes="48px"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-300">IMG</div>
@@ -453,6 +454,7 @@ function LowStockModal({ products, onClose }) {
                       alt={product.title}
                       className="object-cover"
                       sizes="48px"
+                      unoptimized
                     />
                   </div>
                   <div className="flex-1 min-w-0">

@@ -301,6 +301,7 @@ function ProductStatsContent() {
                                                                 fill
                                                                 className="object-cover"
                                                                 sizes="40px"
+                                                                unoptimized
                                                             />
                                                         ) : (
                                                             <span className="flex items-center justify-center h-full text-gray-400 text-lg">📦</span>

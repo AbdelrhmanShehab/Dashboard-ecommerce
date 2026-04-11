@@ -146,7 +146,7 @@ function LeadsContent() {
                                             {lead.product ? (
                                                 <div className="flex items-center gap-3">
                                                     <div className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 dark:border-gray-700">
-                                                        <Image src={lead.product.image} alt="" fill className="object-cover" />
+                                                        <Image src={lead.product.image} alt="" fill className="object-cover" unoptimized />
                                                     </div>
                                                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300 line-clamp-1">
                                                         {lead.product.title}

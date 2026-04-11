@@ -161,6 +161,7 @@ function ProductsContent() {
                         width={50}
                         height={50}
                         className="rounded object-cover"
+                        unoptimized
                       />
                     )}
                   </td>

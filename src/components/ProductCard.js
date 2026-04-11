@@ -57,6 +57,7 @@ const ProductCard = memo(function ProductCard() {
                     fill
                     className="object-cover"
                     sizes="40px"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-100" />

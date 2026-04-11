@@ -490,6 +490,7 @@ function OrderDetailsModal({ order, onClose, updateStatus, verdictPayment, confi
                           fill
                           className="object-cover"
                           sizes="56px"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-300 uppercase bg-gray-50">
